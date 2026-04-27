@@ -22,7 +22,7 @@ const CONFIG = {
   SUPABASE_ANON_KEY:  'sb_publishable_7CTU0SJ0Yc_-Q6yqsSmFhQ_LEE0M73U',
   STRIPE_PAYMENT_LINK:'https://buy.stripe.com/SEU_LINK_PRO',   // Payment Link do plano Pro
   STRIPE_PORTAL_URL:  'https://billing.stripe.com/p/SEU_PORTAL', // Customer Portal
-  FREE_ITEMS_LIMIT:   50,   // gastos/mês no plano gratuito
+  TRIAL_DAYS:         15,   // dias de trial gratuito
   APP_URL:            'https://transcendent-crepe-2c7ec5.netlify.app',
 };
 </script>
@@ -64,6 +64,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .plan-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:20px}
 .plan-badge.free{background:var(--surface2);color:var(--text3)}
 .plan-badge.pro{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.plan-badge.trial{background:linear-gradient(135deg,#1a8a4a,#22c98a);color:#fff}
+.plan-badge.expired{background:var(--red-l);color:var(--red)}
+
+/* ── TRIAL EXPIRED SCREEN ── */
+.trial-expired-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
+.trial-expired-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);text-align:center}
+.trial-expired-icon{width:64px;height:64px;border-radius:50%;background:var(--amber-l);margin:0 auto 20px;display:flex;align-items:center;justify-content:center}
+.trial-expired-icon svg{width:28px;height:28px;stroke:var(--amber);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.trial-expired-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.trial-expired-sub{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:24px}
+.trial-price-box{background:var(--surface2);border-radius:var(--r);padding:18px;margin-bottom:20px;text-align:left}
+.trial-price-row{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:6px 0}
+.trial-price-row:not(:last-child){border-bottom:1px solid var(--border)}
+.trial-price-label{color:var(--text2);font-weight:500}
+.trial-price-val{font-weight:700;color:var(--text)}
+.trial-price-val.highlight{color:var(--green)}
 
 /* ── PAYWALL ── */
 .paywall-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;text-align:center;box-shadow:var(--shadow)}
@@ -545,40 +561,25 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="page" id="page-planos">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px">Planos</div>
-      <div style="font-size:14px;color:var(--text2)">Escolha o plano ideal para você</div>
+      <div style="font-size:14px;color:var(--text2)">Simples e transparente</div>
     </div>
-    <div class="pricing-cards">
-      <div class="pricing-card">
-        <div class="pricing-plan-name">Grátis</div>
-        <div class="pricing-price">R$ 0<span>/mês</span></div>
-        <ul class="pricing-features">
-          <li>50 gastos por mês</li>
-          <li>PF + PJ separados</li>
-          <li>Categorias</li>
-          <li>Gráficos básicos</li>
-          <li class="no">OCR de comprovantes</li>
-          <li class="no">Entrada por voz</li>
-          <li class="no">PDF mensal</li>
-          <li class="no">Anomalias e projeções</li>
-        </ul>
-      </div>
-      <div class="pricing-card popular">
-        <div class="popular-label">⭐ Popular</div>
-        <div class="pricing-plan-name">Pro</div>
-        <div class="pricing-price">R$ 19<span>/mês</span></div>
-        <ul class="pricing-features">
-          <li>Gastos ilimitados</li>
-          <li>PF + PJ separados</li>
-          <li>Todas as categorias</li>
-          <li>Gráficos avançados</li>
-          <li>OCR de comprovantes</li>
-          <li>Entrada por voz</li>
-          <li>PDF mensal</li>
-          <li>Anomalias e projeções</li>
-        </ul>
-      </div>
+    <div class="pricing-card popular" style="margin-bottom:12px">
+      <div class="popular-label">⭐ Único plano</div>
+      <div class="pricing-plan-name" style="margin-top:8px">Pro</div>
+      <div class="pricing-price">R$ 10<span>/1º mês</span></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Depois R$ 19/mês · Cancele quando quiser</div>
+      <ul class="pricing-features">
+        <li>15 dias grátis para testar tudo</li>
+        <li>Gastos ilimitados</li>
+        <li>PF + PJ separados</li>
+        <li>Gráficos avançados e anomalias</li>
+        <li>OCR de comprovantes (foto)</li>
+        <li>Entrada por voz</li>
+        <li>Relatório PDF mensal</li>
+        <li>Exportação CSV</li>
+      </ul>
     </div>
-    <button class="btn-upgrade" id="upgrade-btn" onclick="openUpgrade()">Assinar Pro — R$ 19/mês</button>
+    <button class="btn-upgrade" id="upgrade-btn" onclick="openUpgrade()">Assinar Pro — R$ 10 no 1º mês</button>
     <div style="text-align:center;margin-top:12px">
       <span style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600" onclick="openPortal()">Gerenciar assinatura</span>
     </div>
@@ -670,37 +671,36 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   </div>
 </div>
 
+<!-- TRIAL EXPIRED SCREEN -->
+<div class="trial-expired-screen" id="trial-expired-screen" style="display:none">
+  <div class="trial-expired-card">
+    <div class="trial-expired-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="trial-expired-title">Seu trial acabou</div>
+    <p class="trial-expired-sub">Seus 15 dias gratuitos expiraram. Assine o plano Pro para continuar usando o Finan.RB.</p>
+    <div class="trial-price-box">
+      <div class="trial-price-row"><span class="trial-price-label">Primeiro mês</span><span class="trial-price-val highlight">R$ 10,00</span></div>
+      <div class="trial-price-row"><span class="trial-price-label">A partir do 2º mês</span><span class="trial-price-val">R$ 19,00/mês</span></div>
+      <div class="trial-price-row"><span class="trial-price-label">Fidelidade</span><span class="trial-price-val">Nenhuma — cancele quando quiser</span></div>
+    </div>
+    <button class="btn-upgrade" onclick="openUpgrade()">Assinar Pro</button>
+    <div style="margin-top:12px"><button class="btn-ghost" onclick="doLogout()" style="width:100%;font-size:13px">Sair da conta</button></div>
+  </div>
+</div>
+
 <!-- PAYWALL MODAL -->
 <div class="modal-bg center" id="modal-paywall" onclick="bgClose(event,'modal-paywall')">
   <div class="modal">
     <div style="text-align:center;margin-bottom:20px">
-      <div class="paywall-icon" style="margin:0 auto 14px"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:6px" id="paywall-title">Recurso Pro</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.6" id="paywall-desc">Este recurso está disponível no plano Pro.</div>
+      <div class="paywall-icon" style="margin:0 auto 14px"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:6px" id="paywall-title">Trial expirado</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6" id="paywall-desc">Seus 15 dias gratuitos acabaram. Assine o Pro para continuar.</div>
     </div>
-    <div class="pricing-cards" style="margin-bottom:16px">
-      <div class="pricing-card">
-        <div class="pricing-plan-name">Grátis</div>
-        <div class="pricing-price" style="font-size:18px">R$ 0<span>/mês</span></div>
-        <ul class="pricing-features" style="font-size:11px">
-          <li>50 gastos/mês</li>
-          <li>Funcionalidades básicas</li>
-          <li class="no">OCR, Voz, PDF</li>
-        </ul>
-      </div>
-      <div class="pricing-card popular">
-        <div class="popular-label">⭐ Pro</div>
-        <div class="pricing-plan-name">Pro</div>
-        <div class="pricing-price" style="font-size:18px">R$ 19<span>/mês</span></div>
-        <ul class="pricing-features" style="font-size:11px">
-          <li>Ilimitado</li>
-          <li>Todas as funcionalidades</li>
-          <li>OCR + Voz + PDF</li>
-        </ul>
-      </div>
+    <div style="background:var(--surface2);border-radius:var(--r);padding:16px;margin-bottom:16px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Primeiro mês</span><b style="color:var(--green)">R$ 10,00</b></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text2)">A partir do 2º mês</span><b>R$ 19,00/mês</b></div>
     </div>
-    <button class="btn-upgrade" onclick="openUpgrade()">Assinar Pro — R$ 19/mês</button>
-    <div style="text-align:center;margin-top:10px"><button class="btn-ghost" onclick="closeModal('modal-paywall')" style="width:100%">Continuar no plano gratuito</button></div>
+    <button class="btn-upgrade" onclick="openUpgrade()">Assinar Pro agora</button>
+    <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--text3)">Cancele quando quiser · Sem fidelidade</div>
   </div>
 </div>
 
@@ -830,17 +830,21 @@ const DB = {
 // ═══════════════════════════════════════════
 // PLAN CHECKS
 // ═══════════════════════════════════════════
-function isPro(){return STATE.profile.plan==='pro';}
-function thisMonthCount(){const cur=new Date().toISOString().substring(0,7);return STATE.items.filter(i=>mk(i.date)===cur).length;}
-function canAddItem(){if(isPro())return true;return thisMonthCount()<CONFIG.FREE_ITEMS_LIMIT;}
+function trialDaysLeft(){
+  const createdAt=STATE.user?.created_at;
+  if(!createdAt)return CONFIG.TRIAL_DAYS;
+  const diffDays=Math.floor((Date.now()-new Date(createdAt).getTime())/86400000);
+  return Math.max(0,CONFIG.TRIAL_DAYS-diffDays);
+}
+function isInTrial(){return STATE.profile.plan!=='pro'&&trialDaysLeft()>0;}
+function isPro(){return STATE.profile.plan==='pro'||isInTrial();}
+function isBlocked(){return STATE.profile.plan!=='pro'&&trialDaysLeft()<=0;}
+function canAddItem(){return!isBlocked();}
+function showTrialExpired(){
+  document.getElementById('trial-expired-screen').style.display='';
+}
 function triggerFeature(feature,scope){
-  if(!isPro()){
-    const titles={ocr:'Leitura de comprovantes',voice:'Entrada por voz',pdf:'Relatório PDF'};
-    const descs={ocr:'Tire uma foto do seu comprovante e o app preenche automaticamente.',voice:'Diga em voz alta o gasto e o app detecta valor e categoria.',pdf:'Gere um relatório mensal profissional em PDF.'};
-    document.getElementById('paywall-title').textContent=titles[feature]||'Recurso Pro';
-    document.getElementById('paywall-desc').textContent=descs[feature]||'';
-    openModal('modal-paywall');return;
-  }
+  if(isBlocked()){showTrialExpired();return;}
   if(feature==='ocr'){if(!STATE.profile.api_key){toast('Configure a chave API em Config');return;}document.getElementById('ocr-input-'+scope).click();}
   else if(feature==='voice')startVoice();
   else if(feature==='pdf')exportPDF();
@@ -958,11 +962,7 @@ function updateParcelaPreview(scope){const chk=document.getElementById(scope+'-p
 // ADD ITEMS
 // ═══════════════════════════════════════════
 async function doAdd(desc,val,cat,tipo,date,rec){
-  if(!canAddItem()){
-    document.getElementById('paywall-title').textContent='Limite do plano gratuito';
-    document.getElementById('paywall-desc').textContent=`Você atingiu o limite de ${CONFIG.FREE_ITEMS_LIMIT} gastos por mês. Assine o Pro para registros ilimitados.`;
-    openModal('modal-paywall');return false;
-  }
+  if(isBlocked()){showTrialExpired();return false;}
   vibrate();
   const item={id:Date.now(),desc,val,cat,tipo,date,rec:!!rec};
   STATE.items.unshift(item);
@@ -1243,7 +1243,9 @@ async function clearAll(){if(!confirm('Apagar TODOS os dados permanentemente?'))
 function renderPlanBadge(){
   const el=document.getElementById('hdr-plan-badge');
   if(!el)return;
-  el.innerHTML=isPro()?'<span class="plan-badge pro">⭐ Pro</span>':'<span class="plan-badge free">Gratuito</span>';
+  if(STATE.profile.plan==='pro'){el.innerHTML='<span class="plan-badge pro">⭐ Pro</span>';}
+  else if(isInTrial()){const d=trialDaysLeft();el.innerHTML=`<span class="plan-badge trial">Trial — ${d} dia${d!==1?'s':''}</span>`;}
+  else{el.innerHTML='<span class="plan-badge expired">Trial expirado</span>';}
 }
 
 // ═══════════════════════════════════════════
@@ -1262,9 +1264,9 @@ function renderHome(){
   document.getElementById('h-pf-n').textContent=pf.length+' gasto'+(pf.length!==1?'s':'');
   document.getElementById('h-pj-n').textContent=pj.length+' gasto'+(pj.length!==1?'s':'');
 
-  // Usage bar (free plan)
+  // Trial banner
   const usageEl=document.getElementById('h-usage');
-  if(!isPro()){const curMk=new Date().toISOString().substring(0,7);const count=thisMonthCount();const pct=Math.min(100,Math.round(count/CONFIG.FREE_ITEMS_LIMIT*100));const barColor=pct>=90?'var(--red)':pct>=70?'var(--amber)':'var(--green)';usageEl.innerHTML=`<div class="usage-bar"><div class="usage-row"><span class="usage-label">Gastos este mês (plano gratuito)</span><span class="usage-count">${count} / ${CONFIG.FREE_ITEMS_LIMIT}</span></div><div class="usage-bg"><div class="usage-fill" style="width:${pct}%;background:${barColor}"></div></div></div>`;}
+  if(isInTrial()){const d=trialDaysLeft();const pct=Math.round(d/CONFIG.TRIAL_DAYS*100);const barColor=d<=3?'var(--red)':d<=7?'var(--amber)':'var(--green)';usageEl.innerHTML=`<div class="usage-bar"><div class="usage-row"><span class="usage-label">Trial gratuito</span><span class="usage-count">${d} dia${d!==1?'s':''} restante${d!==1?'s':''}</span></div><div class="usage-bg"><div class="usage-fill" style="width:${pct}%;background:${barColor}"></div></div></div>`;}
   else usageEl.innerHTML='';
 
   // Projection
@@ -1344,8 +1346,17 @@ function renderMetas(){
 function renderPlanos(){
   const planInfoEl=document.getElementById('plan-current-info');
   const upgradeBtn=document.getElementById('upgrade-btn');
-  if(isPro()){if(upgradeBtn)upgradeBtn.style.display='none';if(planInfoEl)planInfoEl.innerHTML='<strong style="color:var(--green)">✓ Você está no plano Pro</strong><br/>Obrigado por assinar! Aproveite todos os recursos sem limites. Para gerenciar ou cancelar sua assinatura, use o portal de assinaturas acima.';}
-  else{if(upgradeBtn)upgradeBtn.style.display='';if(planInfoEl)planInfoEl.innerHTML=`<strong>Plano Gratuito ativo</strong><br/>Você pode usar ${CONFIG.FREE_ITEMS_LIMIT} gastos por mês. Para desbloquear OCR, voz, PDF e gastos ilimitados, assine o plano Pro.`;}
+  if(STATE.profile.plan==='pro'){
+    if(upgradeBtn)upgradeBtn.style.display='none';
+    if(planInfoEl)planInfoEl.innerHTML='<strong style="color:var(--green)">✓ Você está no plano Pro</strong><br/>Obrigado por assinar! Aproveite todos os recursos sem limites. Para gerenciar ou cancelar, use o portal acima.';
+  }else if(isInTrial()){
+    const d=trialDaysLeft();
+    if(upgradeBtn)upgradeBtn.style.display='';
+    if(planInfoEl)planInfoEl.innerHTML=`<strong>Trial ativo — ${d} dia${d!==1?'s':''} restante${d!==1?'s':''}</strong><br/>Você tem acesso a todos os recursos gratuitamente. Assine antes do trial expirar e pague apenas R$ 10 no primeiro mês.`;
+  }else{
+    if(upgradeBtn)upgradeBtn.style.display='';
+    if(planInfoEl)planInfoEl.innerHTML='<strong style="color:var(--red)">Trial expirado</strong><br/>Assine o plano Pro para continuar usando o Finan.RB. Primeiro mês por R$ 10,00.';
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1357,7 +1368,7 @@ function renderConfig(){
   document.getElementById('cfg-dark').checked=STATE.profile.dark||false;
   document.getElementById('cfg-close-day').value=STATE.profile.close_day||1;
   document.getElementById('cfg-email').textContent=STATE.user?.email||'';
-  document.getElementById('cfg-plan').innerHTML=isPro()?'<span class="plan-badge pro">⭐ Pro</span>':'<span class="plan-badge free">Gratuito</span>';
+  document.getElementById('cfg-plan').innerHTML=STATE.profile.plan==='pro'?'<span class="plan-badge pro">⭐ Pro</span>':isInTrial()?`<span class="plan-badge trial">Trial — ${trialDaysLeft()} dias</span>`:'<span class="plan-badge expired">Trial expirado</span>';
   document.getElementById('cfg-count').textContent=STATE.items.length+' gasto'+(STATE.items.length!==1?'s':'')+' salvos';
   const recItems=STATE.items.filter(i=>i.rec);const recEl=document.getElementById('cfg-rec-list');
   recEl.innerHTML=recItems.length?recItems.map(i=>`<div class="rec-item"><div class="rec-info"><div class="rec-desc">${esc(i.desc)}</div><div class="rec-meta">${fmt(i.val)} · ${esc(i.cat)} · ${esc(i.tipo)}</div></div><button class="btn-sm" onclick="delItem(${i.id})">Remover</button></div>`).join(''):'<div style="padding:0 16px 4px;font-size:13px;color:var(--text3)">Nenhum gasto recorrente.</div>';
@@ -1400,6 +1411,7 @@ async function initApp(user){
 
   renderAll();
   await checkUpgradeParam();
+  if(isBlocked()){showTrialExpired();}
 }
 
 // ═══════════════════════════════════════════
