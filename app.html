@@ -596,14 +596,6 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
       <div class="config-row"><div><div class="config-label">Dia de fechamento</div><div class="config-desc">Início do ciclo mensal</div></div><select id="cfg-close-day" onchange="saveProfile()" style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:6px 10px;font-family:var(--f);font-size:13px;font-weight:600;outline:none;appearance:none"></select></div>
       <div class="config-row"><div><div class="config-label">Modo escuro</div></div><label class="toggle-switch"><input type="checkbox" id="cfg-dark" onchange="applyDark()"/><span class="toggle-slider"></span></label></div>
     </div>
-    <div class="sec-title" style="margin-bottom:10px">OCR de comprovantes</div>
-    <div class="config-block">
-      <div class="config-row" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div><div class="config-label">Chave de API Anthropic</div><div class="config-desc">Para leitura de comprovantes e voz (plano Pro)</div></div>
-        <input id="cfg-apikey" type="password" style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:8px 10px;font-family:var(--f);font-size:13px;outline:none;width:100%" placeholder="sk-ant-..." onchange="saveProfile()"/>
-        <div style="font-size:11px;color:var(--text3)">Obtenha em console.anthropic.com · salva de forma segura</div>
-      </div>
-    </div>
     <div class="sec-title" style="margin-bottom:10px">Gastos recorrentes</div>
     <div class="config-block"><div id="cfg-rec-list" style="padding:8px 0 0"></div><div style="padding:4px 16px 14px;font-size:12px;color:var(--text3)">Gastos marcados como recorrentes.</div></div>
     <div class="sec-title" style="margin-bottom:10px">Exportar dados</div>
@@ -750,7 +742,7 @@ function csvCell(s){return'"'+String(s).replace(/"/g,'""')+'"';}
 // ═══════════════════════════════════════════
 let STATE = {
   user: null,
-  profile: { name:'', close_day:1, plan:'free', api_key:'', dark:false },
+  profile: { name:'', close_day:1, plan:'free', dark:false },
   items: [],
   budgets: {},
   filterVal: 'todos',
@@ -816,7 +808,7 @@ const DB = {
   async loadProfile(){
     const{data,error}=await db.from('profiles').select('*').eq('id',STATE.user.id).single();
     if(error&&error.code!=='PGRST116')throw error;
-    if(data)STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',api_key:data.api_key||'',dark:data.dark||false};
+    if(data)STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false};
   },
 
   async saveProfile(updates){
@@ -845,7 +837,7 @@ function showTrialExpired(){
 }
 function triggerFeature(feature,scope){
   if(isBlocked()){showTrialExpired();return;}
-  if(feature==='ocr'){if(!STATE.profile.api_key){toast('Configure a chave API em Config');return;}document.getElementById('ocr-input-'+scope).click();}
+  if(feature==='ocr'){document.getElementById('ocr-input-'+scope).click();}
   else if(feature==='voice')startVoice();
   else if(feature==='pdf')exportPDF();
 }
@@ -1062,8 +1054,7 @@ async function removeBudget(cat){
 async function saveProfile(){
   STATE.profile.name=document.getElementById('cfg-name').value;
   STATE.profile.close_day=parseInt(document.getElementById('cfg-close-day').value)||1;
-  STATE.profile.api_key=document.getElementById('cfg-apikey').value;
-  try{await DB.saveProfile({name:STATE.profile.name,close_day:STATE.profile.close_day,api_key:STATE.profile.api_key,dark:STATE.profile.dark});}
+  try{await DB.saveProfile({name:STATE.profile.name,close_day:STATE.profile.close_day,dark:STATE.profile.dark});}
   catch(e){toast('Erro ao salvar configurações');}
 }
 
@@ -1193,16 +1184,50 @@ function startVoice(){
 function stopVoice(){if(STATE.recognition){STATE.recognition.stop();STATE.recognition=null;}document.getElementById('voice-overlay').classList.remove('open');document.getElementById('voice-text').textContent='Ouvindo...';}
 async function processVoice(text){
   stopVoice();
-  if(!STATE.profile.api_key){const match=text.match(/(\d+(?:[.,]\d+)?)/);const val=match?parseFloat(match[1].replace(',','.')):0;if(val>0){document.getElementById('g-desc').value=text.replace(/gastei|reais|real|no|na|em/gi,'').replace(/\d+([.,]\d+)?/,'').trim()||text;document.getElementById('g-val').value=val;goPage('gastos',document.querySelectorAll('.nav-btn')[1]);toast('Verifique e confirme');}else toast('Não entendi o valor. Tente: "gastei 50 no mercado"');return;}
   toast('Processando...');
-  try{const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':STATE.profile.api_key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:`Extraia dados de gasto desta frase: "${text}". Responda SOMENTE com JSON: {"desc":"descrição","val":0.00,"cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}`}]})});const data=await resp.json();const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());document.getElementById('g-desc').value=parsed.desc||text;if(parsed.val&&parsed.val>0)document.getElementById('g-val').value=parsed.val.toFixed(2);if(parsed.cat)document.getElementById('g-cat').value=parsed.cat;goPage('gastos',document.querySelectorAll('.nav-btn')[1]);toast('Verifique e confirme');}catch(e){toast('Erro ao processar voz');}
+  try{
+    const{data:{session}}=await db.auth.getSession();
+    const token=session?.access_token;
+    if(!token){toast('Sessão expirada — faça login novamente');return;}
+    const resp=await fetch('/.netlify/functions/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'voice',text,token})});
+    if(!resp.ok){const err=await resp.json().catch(()=>({}));toast(err.error||'Erro ao processar voz');return;}
+    const data=await resp.json();
+    const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());
+    document.getElementById('g-desc').value=parsed.desc||text;
+    if(parsed.val&&parsed.val>0)document.getElementById('g-val').value=parsed.val.toFixed(2);
+    if(parsed.cat)document.getElementById('g-cat').value=parsed.cat;
+    goPage('gastos',document.querySelectorAll('.nav-btn')[1]);
+    toast('Verifique e confirme');
+  }catch(e){toast('Erro ao processar voz');}
 }
 
 // ═══════════════════════════════════════════
 // OCR
 // ═══════════════════════════════════════════
-function triggerOCR(scope){if(!STATE.profile.api_key){toast('Configure a chave API em Config');return;}document.getElementById('ocr-input-'+scope).click();}
-async function readOCR(event,scope){const file=event.target.files[0];if(!file)return;const btn=document.getElementById('ocr-btn-'+scope);btn.classList.add('loading');try{const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=()=>rej();r.readAsDataURL(file);});const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':STATE.profile.api_key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64}},{type:'text',text:'Analise o comprovante. JSON puro: {"desc":"estabelecimento","val":0.00,"date":"YYYY-MM-DD ou null","cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}'}]}]})});const data=await resp.json();const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());document.getElementById(scope+'-desc').value=parsed.desc||'';if(parsed.val&&parsed.val>0)document.getElementById(scope+'-val').value=parsed.val.toFixed(2);if(parsed.date&&parsed.date!=='null'){const df=document.getElementById(scope+'-date');if(df)df.value=parsed.date;}if(parsed.cat){const sel=document.getElementById(scope+'-cat');if(sel)sel.value=parsed.cat;}toast('Comprovante lido!');}catch(e){toast('Erro ao ler comprovante');}finally{btn.classList.remove('loading');event.target.value='';}}
+function triggerOCR(scope){
+  if(isBlocked()){showTrialExpired();return;}
+  document.getElementById('ocr-input-'+scope).click();
+}
+async function readOCR(event,scope){
+  const file=event.target.files[0];if(!file)return;
+  const btn=document.getElementById('ocr-btn-'+scope);btn.classList.add('loading');
+  try{
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    const{data:{session}}=await db.auth.getSession();
+    const token=session?.access_token;
+    if(!token){toast('Sessão expirada — faça login novamente');return;}
+    const resp=await fetch('/.netlify/functions/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'ocr',image:b64,mediaType:file.type||'image/jpeg',token})});
+    if(!resp.ok){const err=await resp.json().catch(()=>({}));toast(err.error||'Erro ao ler comprovante');return;}
+    const data=await resp.json();
+    const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());
+    document.getElementById(scope+'-desc').value=parsed.desc||'';
+    if(parsed.val&&parsed.val>0)document.getElementById(scope+'-val').value=parsed.val.toFixed(2);
+    if(parsed.date&&parsed.date!=='null'){const df=document.getElementById(scope+'-date');if(df)df.value=parsed.date;}
+    if(parsed.cat){const sel=document.getElementById(scope+'-cat');if(sel)sel.value=parsed.cat;}
+    toast('Comprovante lido!');
+  }catch(e){toast('Erro ao ler comprovante');}
+  finally{btn.classList.remove('loading');event.target.value='';}
+}
 
 // ═══════════════════════════════════════════
 // EXPORT
@@ -1364,7 +1389,6 @@ function renderPlanos(){
 // ═══════════════════════════════════════════
 function renderConfig(){
   document.getElementById('cfg-name').value=STATE.profile.name||'';
-  document.getElementById('cfg-apikey').value=STATE.profile.api_key||'';
   document.getElementById('cfg-dark').checked=STATE.profile.dark||false;
   document.getElementById('cfg-close-day').value=STATE.profile.close_day||1;
   document.getElementById('cfg-email').textContent=STATE.user?.email||'';
