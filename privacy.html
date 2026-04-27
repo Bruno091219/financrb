@@ -40,14 +40,14 @@ footer{text-align:center;padding:32px 24px;font-size:13px;color:#9ca3af;border-t
   <div class="highlight"><p>Resumo: coletamos apenas os dados necessários para o funcionamento do app. Seus dados financeiros são privados e isolados — nenhum outro usuário, e nem nós, temos acesso ao conteúdo dos seus gastos.</p></div>
 
   <h2>1. Quem somos</h2>
-  <p>O Finan.RB é um serviço de controle financeiro pessoal e empresarial operado por [Weberth Bruno Gomes Sobrinho], inscrita sob o CPF 054.067.543-19, com sede em São Paulo-SP, Brasil. Contato: <a href="mailto:contato@luxea.com.br">contato@financrb.luxea.com.br</a></p>
+  <p>O Finan.RB é um serviço de controle financeiro pessoal e empresarial operado por Weberth Bruno Gomes Sobrinho, inscrito sob o CPF 054.067.543-19, com sede em São Paulo-SP, Brasil. Contato: <a href="mailto:contato@financrb.com.br">contato@financrb.com.br</a></p>
 
   <h2>2. Dados que coletamos</h2>
   <p>Coletamos apenas os dados necessários para o funcionamento do serviço:</p>
   <ul>
     <li><b>Dados de cadastro:</b> nome e endereço de e-mail, fornecidos por você no momento do registro</li>
     <li><b>Dados financeiros:</b> descrição, valor, data, categoria e tipo (PF/PJ) dos gastos que você registra</li>
-    <li><b>Dados de configuração:</b> preferências de tema, dia de fechamento do ciclo e chave de API Anthropic (armazenada de forma criptografada)</li>
+    <li><b>Dados de configuração:</b> preferências de tema, dia de fechamento do ciclo e chave de API Anthropic (armazenada no banco de dados com acesso restrito por Row Level Security)</li>
     <li><b>Dados de pagamento:</b> processados diretamente pelo Stripe. Não armazenamos dados de cartão de crédito</li>
     <li><b>Dados de uso:</b> logs de acesso e informações técnicas para diagnóstico de erros (sem rastreamento de comportamento detalhado)</li>
   </ul>
@@ -90,7 +90,7 @@ footer{text-align:center;padding:32px 24px;font-size:13px;color:#9ca3af;border-t
     <li>Comunicação criptografada via HTTPS/TLS em todas as requisições</li>
     <li>Senhas armazenadas com hash seguro (bcrypt via Supabase Auth)</li>
     <li>Isolamento de dados por usuário via Row Level Security</li>
-    <li>Chaves de API armazenadas de forma criptografada</li>
+    <li>Chaves de API armazenadas com acesso restrito por Row Level Security</li>
   </ul>
 
   <h2>9. Menores de idade</h2>
@@ -102,7 +102,7 @@ footer{text-align:center;padding:32px 24px;font-size:13px;color:#9ca3af;border-t
   <h2>11. Contato</h2>
   <p>Dúvidas, solicitações ou reclamações sobre privacidade:<br/>
   E-mail: <a href="mailto:privacidade@financrb.com.br">privacidade@financrb.com.br</a><br/>
-  Encarregado de Dados (DPO): [Seu Nome] — <a href="mailto:dpo@financrb.com.br">dpo@financrb.com.br</a></p>
+  Encarregado de Dados (DPO): Weberth Bruno Gomes Sobrinho — <a href="mailto:dpo@financrb.com.br">dpo@financrb.com.br</a></p>
 </div>
 <footer>© 2025 Finan.RB · <a href="/terms.html" style="color:#6b7280">Termos de Uso</a> · <a href="/" style="color:#6b7280">Início</a></footer>
 </body>
