@@ -1,13 +1,13 @@
 // netlify/functions/ai-proxy.js
-// Proxy seguro para a API da Anthropic.
+// Proxy seguro para a API do Google Gemini.
 // Verifica autenticação Supabase + plano antes de chamar a IA.
-// A ANTHROPIC_API_KEY nunca é exposta ao frontend.
+// A GEMINI_API_KEY nunca é exposta ao frontend.
 
 const { createClient } = require('@supabase/supabase-js');
 
 const TRIAL_DAYS = 15;
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-20250514';
+const GEMINI_ENDPOINT =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 function calcTrialDaysLeft(createdAt) {
   if (!createdAt) return 0;
@@ -21,6 +21,13 @@ function reply(statusCode, body) {
     headers: { 'Content-Type': 'application/json' },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   };
+}
+
+// Normaliza a resposta do Gemini para o formato que o app.html já sabe parsear:
+// { content: [{ type: 'text', text: '...' }] }
+function normalizeGemini(data) {
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  return { content: [{ type: 'text', text }] };
 }
 
 exports.handler = async (event) => {
@@ -65,23 +72,21 @@ exports.handler = async (event) => {
     return reply(403, { error: 'Subscription required' });
   }
 
-  // ── Verificar chave da Anthropic ─────────────────────────────────────────
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('ANTHROPIC_API_KEY não configurada nas variáveis de ambiente.');
+  // ── Verificar chave do Gemini ─────────────────────────────────────────────
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY não configurada nas variáveis de ambiente.');
     return reply(500, { error: 'AI service not configured' });
   }
 
-  // ── Montar payload para a Anthropic ────────────────────────────────────
-  let messages;
+  // ── Montar partes do conteúdo para o Gemini ─────────────────────────────
+  let parts;
 
   if (type === 'voice') {
     const { text } = body;
     if (!text || typeof text !== 'string') return reply(400, { error: 'Missing text' });
-    // Sanitização básica: limitar tamanho
     const safeText = text.slice(0, 500);
-    messages = [{
-      role: 'user',
-      content: `Extraia dados de gasto desta frase: "${safeText}". Responda SOMENTE com JSON: {"desc":"descrição","val":0.00,"cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}`,
+    parts = [{
+      text: `Extraia dados de gasto desta frase: "${safeText}". Responda SOMENTE com JSON puro, sem markdown: {"desc":"descrição","val":0.00,"cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}`,
     }];
 
   } else if (type === 'ocr') {
@@ -90,42 +95,37 @@ exports.handler = async (event) => {
     const safeMediaType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)
       ? mediaType
       : 'image/jpeg';
-    messages = [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: safeMediaType, data: image } },
-        { type: 'text', text: 'Analise o comprovante. JSON puro: {"desc":"estabelecimento","val":0.00,"date":"YYYY-MM-DD ou null","cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}' },
-      ],
-    }];
+    parts = [
+      { inline_data: { mime_type: safeMediaType, data: image } },
+      { text: 'Analise este comprovante. Responda SOMENTE com JSON puro, sem markdown: {"desc":"estabelecimento","val":0.00,"date":"YYYY-MM-DD ou null","cat":"Alimentação|Transporte|Moradia|Saúde|Lazer|Compras|Serviços|Equipamentos|Outros"}' },
+    ];
 
   } else {
     return reply(400, { error: 'Invalid type. Use "ocr" or "voice".' });
   }
 
-  // ── Chamar a API da Anthropic ────────────────────────────────────────────
+  // ── Chamar a API do Gemini ────────────────────────────────────────────────
   try {
-    const anthropicResp = await fetch(ANTHROPIC_API, {
+    const url = `${GEMINI_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`;
+
+    const geminiResp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: type === 'ocr' ? 300 : 200,
-        messages,
+        contents: [{ parts }],
+        generationConfig: { maxOutputTokens: type === 'ocr' ? 300 : 200 },
       }),
     });
 
-    const data = await anthropicResp.json();
+    const data = await geminiResp.json();
 
-    if (!anthropicResp.ok) {
-      console.error('Anthropic API error:', JSON.stringify(data));
+    if (!geminiResp.ok) {
+      console.error('Gemini API error:', JSON.stringify(data));
       return reply(502, { error: 'AI service error' });
     }
 
-    return reply(200, data);
+    // Normaliza para o formato que o app.html já sabe parsear
+    return reply(200, normalizeGemini(data));
 
   } catch (err) {
     console.error('Fetch error:', err.message);
