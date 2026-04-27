@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Finan.RB — Controle financeiro pessoal e empresarial</title>
+<meta name="description" content="Controle seus gastos pessoais (PF) e empresariais (PJ) em um só lugar. Categorização automática, gráficos, metas e muito mais."/>
+<meta property="og:title" content="Finan.RB — Controle financeiro pessoal e empresarial"/>
+<meta property="og:description" content="Separe PF e PJ, defina metas, leia comprovantes com câmera e acompanhe tudo em tempo real."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://financrb.netlify.app"/>
+<meta property="og:image" content="https://financrb.netlify.app/og.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="theme-color" content="#1a8a4a"/>
+<link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- Google Analytics (substitua G-XXXXXXXXXX pelo seu ID) -->
+<!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script> -->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#1a8a4a;--green-m:#22c98a;--green-l:#e8f5ee;--blue:#2563eb;--text:#0d0d0d;--text2:#4b5563;--text3:#9ca3af;--bg:#f9fafb;--surface:#fff;--border:#e5e7eb;--r:16px;--f:'Outfit',sans-serif}
+body{font-family:var(--f);background:var(--surface);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.nav-logo{font-size:20px;font-weight:700;letter-spacing:-.8px}
+.nav-logo span{color:var(--green)}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:14px;font-weight:500;color:var(--text2);transition:color .15s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--green);color:#fff;padding:9px 20px;border-radius:10px;font-size:14px;font-weight:700;transition:opacity .15s}
+.nav-cta:hover{opacity:.9;color:#fff}
+@media(max-width:600px){.nav-links{display:none}}
+
+/* HERO */
+.hero-section{padding:140px 24px 80px;text-align:center;max-width:780px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-l);color:var(--green);font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:24px;letter-spacing:.02em}
+.hero-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green)}
+h1{font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:20px;color:var(--text)}
+h1 span{color:var(--green)}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--text2);line-height:1.6;margin-bottom:36px;font-weight:400;max-width:560px;margin-left:auto;margin-right:auto}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
+.btn-hero{padding:14px 28px;border-radius:12px;font-family:var(--f);font-size:15px;font-weight:700;cursor:pointer;transition:all .15s;border:none}
+.btn-hero.primary{background:var(--green);color:#fff;box-shadow:0 4px 20px rgba(26,138,74,.3)}
+.btn-hero.primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-hero.secondary{background:var(--surface);color:var(--text);border:2px solid var(--border)}
+.btn-hero.secondary:hover{border-color:var(--green);color:var(--green)}
+.hero-note{font-size:13px;color:var(--text3);font-weight:500}
+.hero-note b{color:var(--text2)}
+
+/* APP PREVIEW */
+.preview-wrap{max-width:380px;margin:0 auto 80px;position:relative}
+.preview-phone{background:#1a1a1a;border-radius:32px;padding:16px;box-shadow:0 32px 80px rgba(0,0,0,.18),0 0 0 1px rgba(255,255,255,.06)}
+.preview-screen{background:#f5f6f2;border-radius:20px;overflow:hidden;min-height:520px}
+.preview-hdr{background:#fff;padding:14px 16px 12px;border-bottom:1px solid #e2e4de;display:flex;align-items:center;justify-content:space-between}
+.preview-logo{font-size:17px;font-weight:700;letter-spacing:-.6px;color:#0d0d0d}
+.preview-logo span{color:#1a8a4a}
+.preview-add{width:30px;height:30px;background:#1a8a4a;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.preview-add::before,.preview-add::after{content:'';position:absolute;background:#fff;border-radius:2px}
+.preview-add::before{width:12px;height:2px}
+.preview-add::after{width:2px;height:12px}
+.preview-add{position:relative}
+.prev-body{padding:14px}
+.prev-hero{background:#1a1a1a;border-radius:14px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.prev-hero::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(34,201,138,.15) 0%,transparent 70%)}
+.prev-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.prev-val{font-size:26px;font-weight:700;color:#fff;letter-spacing:-1px;margin-bottom:12px}
+.prev-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prev-sub{background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px}
+.prev-sublabel{font-size:8px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.prev-subval{font-size:14px;font-weight:700}
+.prev-subval.pf{color:#22c98a}
+.prev-subval.pj{color:#60a5fa}
+.prev-item{background:#fff;border:1px solid #e2e4de;border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.prev-icon{width:34px;height:34px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.prev-iinfo{flex:1;min-width:0}
+.prev-idesc{font-size:12px;font-weight:600;color:#0d0d0d}
+.prev-icat{font-size:10px;color:#9ca3af}
+.prev-ival{font-size:12px;font-weight:700}
+.prev-ival.pf{color:#1a8a4a}
+.prev-ival.pj{color:#2563eb}
+
+/* FEATURES */
+.section{padding:80px 24px;max-width:1080px;margin:0 auto}
+.section-label{font-size:12px;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;text-align:center}
+.section-title{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-1.2px;text-align:center;margin-bottom:12px;line-height:1.1}
+.section-sub{font-size:16px;color:var(--text2);text-align:center;max-width:500px;margin:0 auto 52px;line-height:1.6}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feature-card{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:24px;transition:border-color .2s,box-shadow .2s}
+.feature-card:hover{border-color:var(--green);box-shadow:0 4px 24px rgba(26,138,74,.1)}
+.feature-icon{width:48px;height:48px;border-radius:14px;background:var(--green-l);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feature-icon svg{width:22px;height:22px;stroke:var(--green);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.feature-title{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.feature-desc{font-size:14px;color:var(--text2);line-height:1.65}
+.feature-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:20px;margin-top:10px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+
+/* PRICING */
+.pricing-section{background:var(--bg);padding:80px 24px}
+.pricing-inner{max-width:680px;margin:0 auto}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:560px){.pricing-grid{grid-template-columns:1fr}}
+.price-card{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:28px;transition:all .2s;position:relative}
+.price-card.featured{border-color:var(--green);box-shadow:0 0 0 4px rgba(26,138,74,.08)}
+.price-popular{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:20px;white-space:nowrap}
+.price-plan{font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.price-value{font-size:36px;font-weight:800;letter-spacing:-1.5px;margin-bottom:4px}
+.price-value span{font-size:15px;font-weight:500;color:var(--text3);letter-spacing:0}
+.price-period{font-size:13px;color:var(--text3);margin-bottom:20px}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px}
+.price-features li{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text2)}
+.price-features li svg{width:16px;height:16px;flex-shrink:0}
+.price-features li.no{color:var(--text3)}
+.price-btn{display:block;width:100%;padding:12px;text-align:center;border-radius:10px;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s}
+.price-btn.primary{background:var(--green);color:#fff}
+.price-btn.primary:hover{opacity:.9}
+.price-btn.outline{background:none;border:2px solid var(--border);color:var(--text2)}
+.price-btn.outline:hover{border-color:var(--text);color:var(--text)}
+.pricing-note{text-align:center;font-size:13px;color:var(--text3)}
+
+/* SOCIAL PROOF */
+.proof-section{padding:60px 24px;max-width:900px;margin:0 auto;text-align:center}
+.proof-logos{display:flex;justify-content:center;align-items:center;gap:32px;flex-wrap:wrap;opacity:.4;margin-bottom:52px;filter:grayscale(1)}
+.proof-stat{display:inline-block;font-size:12px;color:var(--text3);font-weight:600}
+.testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.testimonial{background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:20px;text-align:left}
+.test-text{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:14px;font-style:italic}
+.test-author{display:flex;align-items:center;gap:10px}
+.test-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.test-name{font-size:13px;font-weight:700}
+.test-role{font-size:11px;color:var(--text3)}
+
+/* FAQ */
+.faq-section{padding:80px 24px;max-width:680px;margin:0 auto}
+.faq-item{border-bottom:1px solid var(--border);padding:20px 0}
+.faq-q{font-size:16px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;user-select:none}
+.faq-q::after{content:'+';font-size:22px;color:var(--text3);flex-shrink:0;transition:transform .2s}
+.faq-item.open .faq-q::after{transform:rotate(45deg)}
+.faq-a{font-size:14px;color:var(--text2);line-height:1.7;padding-top:12px;display:none}
+.faq-item.open .faq-a{display:block}
+
+/* CTA BOTTOM */
+.cta-section{background:linear-gradient(135deg,#0d5c30,#1a8a4a);padding:80px 24px;text-align:center}
+.cta-title{font-size:clamp(28px,4vw,42px);font-weight:800;color:#fff;letter-spacing:-1.2px;margin-bottom:12px}
+.cta-sub{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:32px;line-height:1.6}
+.cta-btn{display:inline-block;background:#fff;color:var(--green);padding:15px 36px;border-radius:12px;font-family:var(--f);font-size:16px;font-weight:800;cursor:pointer;transition:all .15s;border:none;letter-spacing:-.3px}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.cta-note{font-size:13px;color:rgba(255,255,255,.5);margin-top:14px}
+
+/* FOOTER */
+footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-align:center}
+.footer-logo{font-size:18px;font-weight:700;letter-spacing:-.6px;color:#fff;margin-bottom:12px}
+.footer-logo span{color:#22c98a}
+.footer-links{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
+.footer-links a{color:rgba(255,255,255,.5);transition:color .15s}
+.footer-links a:hover{color:#fff}
+.footer-copy{font-size:12px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Finan<span>.</span>RB</div>
+  <div class="nav-links">
+    <a href="#features">Recursos</a>
+    <a href="#pricing">Planos</a>
+    <a href="#faq">FAQ</a>
+    <a href="/app.html" class="nav-cta">Entrar grátis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero-section">
+  <div class="hero-badge">Novo — versão 4.0 disponível</div>
+  <h1>Seus gastos PF e PJ<br/><span>organizados de verdade</span></h1>
+  <p class="hero-sub">Categorização automática, metas por categoria, leitura de comprovantes por foto e muito mais. Tudo em um app feito para o brasileiro.</p>
+  <div class="hero-btns">
+    <a href="/app.html" class="btn-hero primary">Criar conta grátis</a>
+    <a href="#features" class="btn-hero secondary">Ver recursos</a>
+  </div>
+  <div class="hero-note">Grátis para sempre · <b>Sem cartão de crédito</b> · Seus dados protegidos pela LGPD</div>
+</div>
+
+<!-- APP PREVIEW -->
+<div class="preview-wrap">
+  <div class="preview-phone">
+    <div class="preview-screen">
+      <div class="preview-hdr">
+        <div class="preview-logo">Finan<span>.</span>RB</div>
+        <div class="preview-add"></div>
+      </div>
+      <div class="prev-body">
+        <div class="prev-hero">
+          <div class="prev-label">Total do mês</div>
+          <div class="prev-val">R$ 4.830,00</div>
+          <div class="prev-row">
+            <div class="prev-sub"><div class="prev-sublabel">Pessoal — PF</div><div class="prev-subval pf">R$ 2.150,00</div></div>
+            <div class="prev-sub"><div class="prev-sublabel">Empresa — PJ</div><div class="prev-subval pj">R$ 2.680,00</div></div>
+          </div>
+        </div>
+        <div class="prev-item">
+          <div class="prev-icon" style="background:#e8f5ee;color:#1a8a4a">🍔</div>
+          <div class="prev-iinfo"><div class="prev-idesc">iFood</div><div class="prev-icat">Alimentação · 14/04</div></div>
+          <div class="prev-ival pf">R$ 54,90</div>
+        </div>
+        <div class="prev-item">
+          <div class="prev-icon" style="background:#e8f0fb;color:#2563eb">🚗</div>
+          <div class="prev-iinfo"><div class="prev-idesc">Uber</div><div class="prev-icat">Transporte · 13/04</div></div>
+          <div class="prev-ival pj">R$ 28,00</div>
+        </div>
+        <div class="prev-item">
+          <div class="prev-icon" style="background:#ede9fe;color:#7c3aed">🎬</div>
+          <div class="prev-iinfo"><div class="prev-idesc">Netflix</div><div class="prev-icat">Lazer · 10/04</div></div>
+          <div class="prev-ival pf">R$ 44,90</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features">
+  <div class="section-label">Recursos</div>
+  <div class="section-title">Tudo que você precisa,<br/>nada que você não usa</div>
+  <p class="section-sub">Construído para quem precisa separar as contas pessoais das empresariais sem complicação.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="feature-title">PF e PJ separados</div>
+      <p class="feature-desc">Cada gasto marcado como pessoal ou empresarial. Totais e relatórios separados automaticamente.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+      <div class="feature-title">Leitura de comprovantes</div>
+      <p class="feature-desc">Tire foto do recibo e o app preenche valor, data e categoria automaticamente. Sem digitar nada.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+      <div class="feature-title">Entrada por voz</div>
+      <p class="feature-desc">Diga "gastei 45 reais no iFood" e o app registra o gasto na hora. Funciona em qualquer lugar.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <div class="feature-title">Gráficos e análises</div>
+      <p class="feature-desc">Evolução mensal, top categorias, comparativos com mês anterior e detecção de gastos acima da média.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="feature-title">Metas por categoria</div>
+      <p class="feature-desc">Defina quanto quer gastar em Alimentação, Transporte, etc. Receba alertas quando estiver chegando no limite.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="feature-title">Relatório PDF mensal</div>
+      <p class="feature-desc">Gere um relatório completo do mês com todos os gastos, totais e categorias. Perfeito para enviar ao contador.</p>
+      <span class="feature-tag">Pro</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="feature-title">Gastos recorrentes</div>
+      <p class="feature-desc">Marque aluguel, Netflix e academia como recorrentes. O app lembra de lançar automaticamente todo mês.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="feature-title">Parcelamento automático</div>
+      <p class="feature-desc">Compra parcelada no cartão? Informe o número de parcelas e o app distribui nos meses seguintes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/><path d="M12 6v6l4 2"/></svg></div>
+      <div class="feature-title">Sincronização na nuvem</div>
+      <p class="feature-desc">Seus dados ficam salvos com segurança e sincronizados. Acesse de qualquer dispositivo, a qualquer hora.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="pricing-section" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-label" style="text-align:center">Planos</div>
+    <div class="section-title" style="text-align:center;margin-bottom:8px">Simples e transparente</div>
+    <p class="section-sub" style="margin-bottom:36px">Comece grátis. Upgrade quando precisar.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-plan">Gratuito</div>
+        <div class="price-value">R$ 0<span>/mês</span></div>
+        <div class="price-period">Para sempre, sem cartão</div>
+        <ul class="price-features">
+          <li>
+            <svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            50 gastos por mês
+          </li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>PF + PJ separados</li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Categorias + metas</li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Gráficos básicos</li>
+          <li class="no"><svg viewBox="0 0 24 24" stroke="#d1d5db" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>OCR de comprovantes</li>
+          <li class="no"><svg viewBox="0 0 24 24" stroke="#d1d5db" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Entrada por voz</li>
+          <li class="no"><svg viewBox="0 0 24 24" stroke="#d1d5db" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Relatório PDF</li>
+        </ul>
+        <a href="/app.html" class="price-btn outline">Começar grátis</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-popular">⭐ Mais popular</div>
+        <div class="price-plan">Pro</div>
+        <div class="price-value">R$ 19<span>/mês</span></div>
+        <div class="price-period">Cancele quando quiser</div>
+        <ul class="price-features">
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Gastos ilimitados</b></li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>PF + PJ separados</li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Categorias + metas</li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Gráficos avançados + anomalias</li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>OCR de comprovantes</b></li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Entrada por voz</b></li>
+          <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Relatório PDF mensal</b></li>
+        </ul>
+        <a href="/app.html" class="price-btn primary">Assinar Pro</a>
+      </div>
+    </div>
+    <p class="pricing-note">Pagamento seguro via Stripe · Cancele a qualquer momento · Sem fidelidade</p>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="proof-section">
+  <div class="section-label">Depoimentos</div>
+  <div class="section-title" style="margin-bottom:36px">O que dizem nossos usuários</div>
+  <div class="testimonials">
+    <div class="testimonial">
+      <p class="test-text">"Finalmente consegui separar o que é meu do que é da empresa. A função de PF e PJ é exatamente o que eu precisava como MEI."</p>
+      <div class="test-author">
+        <div class="test-avatar" style="background:#1a8a4a">A</div>
+        <div><div class="test-name">Ana Paula</div><div class="test-role">MEI · Designer</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <p class="test-text">"A leitura de comprovante por foto mudou minha vida. Antes eu ficava acumulando nota fiscal. Agora tiro foto na hora."</p>
+      <div class="test-author">
+        <div class="test-avatar" style="background:#2563eb">R</div>
+        <div><div class="test-name">Ricardo</div><div class="test-role">Consultor · Plano Pro</div></div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <p class="test-text">"Uso o PDF mensal para mandar pro meu contador. Economizo pelo menos 1 hora por mês organizando as notas. Valeu cada centavo."</p>
+      <div class="test-author">
+        <div class="test-avatar" style="background:#7c3aed">M</div>
+        <div><div class="test-name">Mariana</div><div class="test-role">Empreendedora · Plano Pro</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section" id="faq">
+  <div class="section-label" style="text-align:center">Dúvidas</div>
+  <div class="section-title" style="text-align:center;margin-bottom:36px;font-size:32px">Perguntas frequentes</div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">O plano gratuito expira?</div>
+    <div class="faq-a">Não. O plano gratuito é vitalício. Você pode usar 50 gastos por mês para sempre, sem cartão de crédito. O upgrade para Pro é opcional e traz funcionalidades avançadas.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Meus dados ficam seguros?</div>
+    <div class="faq-a">Sim. Os dados são armazenados no Supabase (infraestrutura confiável usada por milhares de empresas) com Row Level Security — nenhum outro usuário pode ver seus dados. O app está em conformidade com a LGPD.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Posso cancelar o Pro a qualquer momento?</div>
+    <div class="faq-a">Sim. Não há fidelidade nem multa. Você pode cancelar quando quiser pelo portal de assinaturas e o plano continua ativo até o fim do período pago.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">O OCR de comprovantes funciona com qualquer nota fiscal?</div>
+    <div class="faq-a">Funciona com a maioria dos recibos e notas fiscais impressos e digitais. A leitura usa a IA do Claude para identificar o estabelecimento, valor e data. Requer uma chave de API da Anthropic (obtida em console.anthropic.com).</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Posso exportar meus dados?</div>
+    <div class="faq-a">Sim. Você pode exportar todos os seus gastos em CSV (compatível com Excel e Google Sheets) a qualquer momento, mesmo no plano gratuito. O plano Pro também inclui relatório PDF mensal completo.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Funciona no celular?</div>
+    <div class="faq-a">Sim. O app é totalmente responsivo e funciona no navegador do celular. Você pode adicionar à tela inicial para ter uma experiência parecida com um app nativo — sem precisar instalar nada.</div>
+  </div>
+</div>
+
+<!-- CTA BOTTOM -->
+<div class="cta-section">
+  <div class="cta-title">Comece a controlar suas<br/>finanças hoje mesmo</div>
+  <p class="cta-sub">Grátis para começar. Sem cartão de crédito.<br/>Pronto em menos de 1 minuto.</p>
+  <a href="/app.html" class="cta-btn">Criar conta grátis</a>
+  <div class="cta-note">Mais de 100 usuários já organizaram suas finanças com o Finan.RB</div>
+</div>
+
+<footer>
+  <div class="footer-logo">Finan<span>.</span>RB</div>
+  <div class="footer-links">
+    <a href="/app.html">Entrar</a>
+    <a href="/privacy.html">Política de Privacidade</a>
+    <a href="/terms.html">Termos de Uso</a>
+    <a href="mailto:contato@financrb.com.br">Contato</a>
+  </div>
+  <div class="footer-copy">© 2025 Finan.RB · CNPJ 00.000.000/0001-00 · Todos os direitos reservados</div>
+</footer>
+
+<script>
+function toggleFaq(el){const item=el.parentElement;item.classList.toggle('open');}
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'});});});
+</script>
+</body>
+</html>

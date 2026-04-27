@@ -1,0 +1,13 @@
+{
+  "name": "financer-rb",
+  "version": "4.0.0",
+  "description": "Finan.RB — Controle financeiro pessoal e empresarial",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.14.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
