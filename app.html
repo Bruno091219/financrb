@@ -639,7 +639,6 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Editar gasto</div>
-    <input type="hidden" id="edit-id"/>
     <div class="field"><label>Descrição</label><input type="text" id="edit-desc"/></div>
     <div class="row2">
       <div class="field"><label>Valor (R$)</label><input type="number" id="edit-val" min="0" step="0.01"/></div>
@@ -701,7 +700,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="voice-circle"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
   <div class="voice-text" id="voice-text">Ouvindo...</div>
   <div class="voice-hint">Diga: "gastei 45 reais no iFood"</div>
-  <button class="voice-cancel" onclick="stopVoice()">Cancelar</button>
+  <button class="voice-cancel" onclick="stopVoice(true)">Cancelar</button>
 </div>
 
 <div class="bnav">
@@ -759,7 +758,7 @@ const DB = {
   setSyncing(v){STATE.syncing=v;const dot=document.getElementById('sync-dot');if(dot){dot.className='sync-dot '+(v?'syncing':'synced');}},
 
   async loadItems(){
-    const{data,error}=await db.from('items').select('*').order('date',{ascending:false}).order('created_at',{ascending:false});
+    const{data,error}=await db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false});
     if(error)throw error;
     STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
   },
@@ -786,7 +785,7 @@ const DB = {
   },
 
   async loadBudgets(){
-    const{data,error}=await db.from('budgets').select('*');
+    const{data,error}=await db.from('budgets').select('*').eq('user_id',STATE.user.id);
     if(error)throw error;
     STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
   },
@@ -930,7 +929,7 @@ async function checkUpgradeParam(){
 function fmt(v){return'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});}
 function mk(d){return d.substring(0,7);}
-function mkLabel(k){const[y,m]=k.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2);}
+function mkLabel(k){const[y,m]=k.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m,10)-1]+'/'+y.slice(2);}
 function prevMk(k){const d=new Date(k+'-15');d.setMonth(d.getMonth()-1);return d.toISOString().substring(0,7);}
 function today(){return new Date().toISOString().substring(0,10);}
 function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
@@ -940,7 +939,7 @@ function catBg(cat){return isDark()?(CAT_BGD[cat]||'rgba(156,163,175,.12)'):(CAT
 // MONTHS
 // ═══════════════════════════════════════════
 function getMonths(){const cur=new Date().toISOString().substring(0,7);const keys=[...new Set(STATE.items.map(i=>mk(i.date)))].sort().reverse();if(!keys.includes(cur))keys.unshift(cur);return keys;}
-function buildSelects(){const months=getMonths();const cur=new Date().toISOString().substring(0,7);['home-month','metas-month'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const prev=sel.value||cur;sel.innerHTML=months.map(k=>`<option value="${k}"${k===prev?' selected':''}>${mkLabel(k)}</option>`).join('');});}
+function buildSelects(){const months=getMonths();const cur=new Date().toISOString().substring(0,7);['home-month','metas-month'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const prev=sel.value||cur;const opts=months.includes(prev)?months:[prev,...months];sel.innerHTML=opts.map(k=>`<option value="${k}"${k===prev?' selected':''}>${mkLabel(k)}</option>`).join('');});}
 function byMonth(k){return STATE.items.filter(i=>mk(i.date)===k);}
 
 // ═══════════════════════════════════════════
@@ -948,7 +947,7 @@ function byMonth(k){return STATE.items.filter(i=>mk(i.date)===k);}
 // ═══════════════════════════════════════════
 function setTipo(t,scope){if(scope==='g')STATE.tipoG=t;else if(scope==='m')STATE.tipoM=t;else STATE.tipoEdit=t;const el=document.getElementById(scope+'-toggle');el.children[0].className='tipo-btn'+(t==='PF'?' act-pf':'');el.children[1].className='tipo-btn'+(t==='PJ'?' act-pj':'');}
 function toggleParcela(scope){const chk=document.getElementById(scope+'-parc-chk').checked;document.getElementById(scope+'-parc-row').classList.toggle('show',chk);updateParcelaPreview(scope);}
-function updateParcelaPreview(scope){const chk=document.getElementById(scope+'-parc-chk');if(!chk||!chk.checked)return;const val=parseFloat(document.getElementById(scope+'-val').value)||0;const n=parseInt(document.getElementById(scope+'-parc-n').value)||2;const pv=document.getElementById(scope+'-parc-preview');if(pv)pv.textContent=n+'x de '+fmt(val/n);}
+function updateParcelaPreview(scope){const chk=document.getElementById(scope+'-parc-chk');if(!chk||!chk.checked)return;const val=parseFloat(document.getElementById(scope+'-val').value)||0;const n=parseInt(document.getElementById(scope+'-parc-n').value,10)||2;const pv=document.getElementById(scope+'-parc-preview');if(pv)pv.textContent=n+'x de '+fmt(val/n);}
 
 // ═══════════════════════════════════════════
 // ADD ITEMS
@@ -972,7 +971,7 @@ async function doAddParcelas(desc,val,cat,tipo,date,n){
   const newItems=[];
   for(let i=0;i<n;i++){
     const d=new Date(baseDate);d.setMonth(d.getMonth()+i);
-    newItems.push({id:Date.now()+i,desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
+    newItems.push({id:Date.now()+i*1000+Math.floor(Math.random()*1000),desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
   }
   STATE.items.unshift(...newItems);renderAll();
   try{for(const item of newItems)await DB.addItem(item);toast(`${n} parcelas adicionadas`);}
@@ -986,7 +985,7 @@ async function addGasto(){
   const catSel=document.getElementById('g-cat').value;
   const rec=document.getElementById('g-rec').checked;
   const isParcela=document.getElementById('g-parc-chk').checked;
-  const nParcelas=parseInt(document.getElementById('g-parc-n').value)||2;
+  const nParcelas=parseInt(document.getElementById('g-parc-n').value,10)||2;
   if(!desc){toast('Informe a descrição');return;}
   if(!v||v<=0){toast('Informe um valor válido');return;}
   if(isParcela){await doAddParcelas(desc,v,catSel||detectCat(desc),STATE.tipoG,date,nParcelas);}
@@ -1000,7 +999,7 @@ async function addModal(){
   const catSel=document.getElementById('m-cat').value;
   const rec=document.getElementById('m-rec').checked;
   const isParcela=document.getElementById('m-parc-chk').checked;
-  const nParcelas=parseInt(document.getElementById('m-parc-n').value)||2;
+  const nParcelas=parseInt(document.getElementById('m-parc-n').value,10)||2;
   if(!desc){toast('Informe a descrição');return;}
   if(!v||v<=0){toast('Informe um valor válido');return;}
   if(isParcela){await doAddParcelas(desc,v,catSel||detectCat(desc),STATE.tipoM,today(),nParcelas);}
@@ -1014,12 +1013,12 @@ async function addModal(){
 // ═══════════════════════════════════════════
 function openEdit(id){
   const item=STATE.items.find(i=>i.id===id);if(!item)return;
-  document.getElementById('edit-id').value=id;document.getElementById('edit-desc').value=item.desc;document.getElementById('edit-val').value=item.val;document.getElementById('edit-date').value=item.date;document.getElementById('edit-cat').value=item.cat;document.getElementById('edit-rec').checked=!!item.rec;STATE.tipoEdit=item.tipo;
+  document.getElementById('modal-edit').dataset.id=id;document.getElementById('edit-desc').value=item.desc;document.getElementById('edit-val').value=item.val;document.getElementById('edit-date').value=item.date;document.getElementById('edit-cat').value=item.cat;document.getElementById('edit-rec').checked=!!item.rec;STATE.tipoEdit=item.tipo;
   const tog=document.getElementById('edit-toggle');tog.children[0].className='tipo-btn'+(STATE.tipoEdit==='PF'?' act-pf':'');tog.children[1].className='tipo-btn'+(STATE.tipoEdit==='PJ'?' act-pj':'');
   openModal('modal-edit');
 }
 async function saveEdit(){
-  const id=parseInt(document.getElementById('edit-id').value);
+  const id=parseInt(document.getElementById('modal-edit').dataset.id,10);
   const idx=STATE.items.findIndex(i=>i.id===id);if(idx===-1)return;
   const v=parseFloat(document.getElementById('edit-val').value);if(!v||v<=0){toast('Valor inválido');return;}
   const updates={desc:document.getElementById('edit-desc').value.trim(),val:v,date:document.getElementById('edit-date').value,cat:document.getElementById('edit-cat').value,tipo:STATE.tipoEdit,rec:document.getElementById('edit-rec').checked};
@@ -1053,7 +1052,7 @@ async function removeBudget(cat){
 // ═══════════════════════════════════════════
 async function saveProfile(){
   STATE.profile.name=document.getElementById('cfg-name').value;
-  STATE.profile.close_day=parseInt(document.getElementById('cfg-close-day').value)||1;
+  STATE.profile.close_day=parseInt(document.getElementById('cfg-close-day').value,10)||1;
   try{await DB.saveProfile({name:STATE.profile.name,close_day:STATE.profile.close_day,dark:STATE.profile.dark});}
   catch(e){toast('Erro ao salvar configurações');}
 }
@@ -1142,7 +1141,7 @@ function openRecModal(monthKey){const toConfirm=getRecToConfirm(monthKey);if(!to
 async function confirmRecurring(){
   const toConfirm=window._rcItems||[];const monthKey=window._rcMonth||today().substring(0,7);const date=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');let count=0;
   const newItems=[];
-  toConfirm.forEach((item,idx)=>{const cb=document.getElementById('rc-'+idx);if(cb&&cb.checked){const ni={id:Date.now()+idx,desc:item.desc,val:item.val,cat:item.cat,tipo:item.tipo,date,rec:false};newItems.push(ni);count++;}});
+  toConfirm.forEach((item,idx)=>{const cb=document.getElementById('rc-'+idx);if(cb&&cb.checked){const ni={id:Date.now()+idx*1000+Math.floor(Math.random()*1000),desc:item.desc,val:item.val,cat:item.cat,tipo:item.tipo,date,rec:false};newItems.push(ni);count++;}});
   STATE.items.unshift(...newItems);renderAll();closeModal('modal-rec');toast(count+' gasto'+(count!==1?'s':'')+' adicionado'+(count!==1?'s':''));
   for(const item of newItems){try{await DB.addItem(item);}catch(e){}}
 }
@@ -1174,16 +1173,17 @@ function startVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){toast('Navegador não suporta voz');return;}
   if(STATE.recognition){STATE.recognition.stop();return;}
-  STATE.recognition=new SR();STATE.recognition.lang='pt-BR';STATE.recognition.interimResults=true;
+  STATE.voiceCancelled=false;STATE.recognition=new SR();STATE.recognition.lang='pt-BR';STATE.recognition.interimResults=true;
   document.getElementById('voice-overlay').classList.add('open');
   STATE.recognition.onresult=(e)=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('voice-text').textContent=t;if(e.results[e.results.length-1].isFinal)processVoice(t);};
   STATE.recognition.onerror=()=>{stopVoice();toast('Erro no reconhecimento de voz');};
   STATE.recognition.onend=()=>stopVoice();
   STATE.recognition.start();
 }
-function stopVoice(){if(STATE.recognition){STATE.recognition.stop();STATE.recognition=null;}document.getElementById('voice-overlay').classList.remove('open');document.getElementById('voice-text').textContent='Ouvindo...';}
+function stopVoice(cancelled=false){if(cancelled)STATE.voiceCancelled=true;if(STATE.recognition){STATE.recognition.stop();STATE.recognition=null;}document.getElementById('voice-overlay').classList.remove('open');document.getElementById('voice-text').textContent='Ouvindo...';}
 async function processVoice(text){
   stopVoice();
+  if(STATE.voiceCancelled)return;
   toast('Processando...');
   try{
     const{data:{session}}=await db.auth.getSession();
@@ -1192,6 +1192,7 @@ async function processVoice(text){
     const resp=await fetch('/.netlify/functions/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'voice',text,token})});
     if(!resp.ok){const err=await resp.json().catch(()=>({}));toast(err.error||'Erro ao processar voz');return;}
     const data=await resp.json();
+    if(STATE.voiceCancelled)return;
     const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());
     document.getElementById('g-desc').value=parsed.desc||text;
     if(parsed.val&&parsed.val>0)document.getElementById('g-val').value=parsed.val.toFixed(2);
@@ -1232,7 +1233,7 @@ async function readOCR(event,scope){
 // ═══════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════
-function exportCSV(){const h='Data,Descrição,Categoria,Tipo,Valor,Recorrente';const rows=STATE.items.map(i=>`${i.date},${csvCell(i.desc)},${csvCell(i.cat)},${i.tipo},${i.val.toFixed(2)},${i.rec?'Sim':'Não'}`);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+[h,...rows].join('\n')],{type:'text/csv;charset=utf-8'}));a.download='finan-rb-gastos.csv';a.click();toast('CSV exportado');}
+function exportCSV(){const h='Data,Descrição,Categoria,Tipo,Valor,Recorrente';const rows=STATE.items.map(i=>`${i.date},${csvCell(i.desc)},${csvCell(i.cat)},${i.tipo},${i.val.toFixed(2)},${i.rec?'Sim':'Não'}`);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+[h,...rows].join('\n')],{type:'text/csv;charset=utf-8'}));a.download='finan-rb-gastos.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),100);toast('CSV exportado');}
 
 function exportPDF(){
   if(!isPro()){triggerFeature('pdf');return;}

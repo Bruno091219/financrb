@@ -106,11 +106,9 @@ exports.handler = async (event) => {
 
   // ── Chamar a API do Gemini ────────────────────────────────────────────────
   try {
-    const url = `${GEMINI_ENDPOINT}?key=${process.env.GEMINI_API_KEY}`;
-
-    const geminiResp = await fetch(url, {
+    const geminiResp = await fetch(GEMINI_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: { maxOutputTokens: type === 'ocr' ? 300 : 200 },
