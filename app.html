@@ -1556,13 +1556,11 @@ async function initApp(user){
   document.getElementById('app-screen').style.display='';
   document.getElementById('onboarding-overlay').style.display='none';
 
-  const testResult=await db.from('items').select('count').limit(1);
-  console.log('[DB TEST]',JSON.stringify(testResult));
-
+  // _hideLoading e timeout definidos ANTES de qualquer chamada async
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
 
-  // Setup UI
+  // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
   document.getElementById('g-date').value=today();
   document.getElementById('g-desc').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('g-val').focus();});
@@ -1571,10 +1569,18 @@ async function initApp(user){
   document.getElementById('m-val').addEventListener('keydown',e=>{if(e.key==='Enter')addModal();});
 
   try{
-    // Load data
-    try{
-      await Promise.all([DB.loadProfile(),DB.loadItems(),DB.loadBudgets()]);
-    }catch(e){console.error('Load error',e);}
+    // Cada chamada isolada — falha individual não bloqueia as demais
+    console.log('[INIT] carregando perfil...');
+    try{await DB.loadProfile();console.log('[INIT] perfil ok:',STATE.profile);}
+    catch(e){console.error('[INIT] loadProfile falhou:',e);STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};}
+
+    console.log('[INIT] carregando items...');
+    try{await DB.loadItems();console.log('[INIT] items ok:',STATE.items.length);}
+    catch(e){console.error('[INIT] loadItems falhou:',e);STATE.items=[];}
+
+    console.log('[INIT] carregando metas...');
+    try{await DB.loadBudgets();console.log('[INIT] metas ok:',Object.keys(STATE.budgets).length);}
+    catch(e){console.error('[INIT] loadBudgets falhou:',e);STATE.budgets={};}
 
     // Apply theme
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
@@ -1584,7 +1590,7 @@ async function initApp(user){
     // Apply modo before rendering
     applyModo();
 
-    // Show content
+    // Show content — sempre alcançado agora que cada DB call tem try/catch próprio
     clearTimeout(_loadingTimeout);
     _hideLoading();
 
@@ -1593,7 +1599,7 @@ async function initApp(user){
     if(isBlocked()){showTrialExpired();}
     else if(STATE._isFirstTime){showOnboarding();}
   }catch(e){
-    console.error('initApp error',e);
+    console.error('[INIT] erro inesperado:',e);
     clearTimeout(_loadingTimeout);
     _hideLoading();
     toast('Erro ao carregar — tente recarregar a página');
