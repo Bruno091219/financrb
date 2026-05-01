@@ -820,13 +820,17 @@ const DB = {
     const{data,error}=await db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false});
     if(error)throw error;
     STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
+    console.log('[DB.loadItems] itens carregados do Supabase:',STATE.items.length,STATE.items.map(i=>({id:i.id,desc:i.desc})));
   },
 
   async addItem(item){
     this.setSyncing(true);
     const{desc,...rest}=item;
-    const{error}=await db.from('items').insert({...rest,descricao:desc,user_id:STATE.user.id});
+    const payload={...rest,descricao:desc,user_id:STATE.user.id};
+    console.log('[DB.addItem] enviando para Supabase:',JSON.stringify(payload));
+    const{data,error}=await db.from('items').insert(payload).select();
     this.setSyncing(false);
+    console.log('[DB.addItem] resposta — data:',data,'error:',error);
     if(error)throw error;
   },
 
