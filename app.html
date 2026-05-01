@@ -824,14 +824,17 @@ const DB = {
 
   async addItem(item){
     this.setSyncing(true);
-    const{error}=await db.from('items').insert({...item,descricao:item.desc,user_id:STATE.user.id});
+    const{desc,...rest}=item;
+    const{error}=await db.from('items').insert({...rest,descricao:desc,user_id:STATE.user.id});
     this.setSyncing(false);
     if(error)throw error;
   },
 
   async updateItem(id,data){
     this.setSyncing(true);
-    const{error}=await db.from('items').update(data).eq('id',id).eq('user_id',STATE.user.id);
+    const{desc,...rest}=data;
+    const payload=desc!==undefined?{...rest,descricao:desc}:rest;
+    const{error}=await db.from('items').update(payload).eq('id',id).eq('user_id',STATE.user.id);
     this.setSyncing(false);
     if(error)throw error;
   },
@@ -999,8 +1002,11 @@ async function doResetPassword(){
 
 async function doLogout(){
   if(!confirm('Sair da conta?'))return;
-  await db.auth.signOut();
-  STATE.user=null;STATE.items=[];STATE.budgets={};
+  try{await db.auth.signOut();}catch(e){console.error('signOut error',e);}
+  STATE.user=null;STATE.items=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};
+  document.getElementById('onboarding-overlay').style.display='none';
+  document.getElementById('home-loading').style.display='';
+  document.getElementById('home-content').style.display='none';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('auth-screen').style.display='';
   toast('Sessão encerrada');
@@ -1377,7 +1383,15 @@ function exportPDF(){
   }catch(e){console.error(e);toast('Erro ao gerar PDF');}
 }
 
-async function clearAll(){if(!confirm('Apagar TODOS os dados permanentemente?'))return;const{error}=await db.from('items').delete().eq('user_id',STATE.user.id);if(error){toast('Erro ao apagar');return;}STATE.items=[];renderAll();toast('Dados apagados');}
+async function clearAll(){
+  if(!confirm('Apagar TODOS os dados permanentemente?'))return;
+  if(!STATE.user){toast('Nenhum usuário ativo');return;}
+  try{
+    const{error}=await db.from('items').delete().eq('user_id',STATE.user.id);
+    if(error)throw error;
+  }catch(e){toast('Erro ao apagar');return;}
+  STATE.items=[];renderAll();toast('Dados apagados');
+}
 
 // ═══════════════════════════════════════════
 // RENDER PLAN BADGE
@@ -1536,6 +1550,10 @@ async function initApp(user){
   STATE.user=user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
+  document.getElementById('onboarding-overlay').style.display='none';
+
+  const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
+  const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
 
   // Setup UI
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
@@ -1545,27 +1563,34 @@ async function initApp(user){
   document.getElementById('m-desc').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('m-val').focus();});
   document.getElementById('m-val').addEventListener('keydown',e=>{if(e.key==='Enter')addModal();});
 
-  // Load data
   try{
-    await Promise.all([DB.loadProfile(),DB.loadItems(),DB.loadBudgets()]);
-  }catch(e){console.error('Load error',e);}
+    // Load data
+    try{
+      await Promise.all([DB.loadProfile(),DB.loadItems(),DB.loadBudgets()]);
+    }catch(e){console.error('Load error',e);}
 
-  // Apply theme
-  document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
-  document.getElementById('cfg-dark').checked=STATE.profile.dark||false;
-  if(STATE.profile.dark){const icon=document.getElementById('dark-icon');icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';}
+    // Apply theme
+    document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
+    document.getElementById('cfg-dark').checked=STATE.profile.dark||false;
+    if(STATE.profile.dark){const icon=document.getElementById('dark-icon');icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';}
 
-  // Apply modo before rendering
-  applyModo();
+    // Apply modo before rendering
+    applyModo();
 
-  // Show content
-  document.getElementById('home-loading').style.display='none';
-  document.getElementById('home-content').style.display='';
+    // Show content
+    clearTimeout(_loadingTimeout);
+    _hideLoading();
 
-  renderAll();
-  await checkUpgradeParam();
-  if(isBlocked()){showTrialExpired();}
-  else if(STATE._isFirstTime){showOnboarding();}
+    renderAll();
+    await checkUpgradeParam();
+    if(isBlocked()){showTrialExpired();}
+    else if(STATE._isFirstTime){showOnboarding();}
+  }catch(e){
+    console.error('initApp error',e);
+    clearTimeout(_loadingTimeout);
+    _hideLoading();
+    toast('Erro ao carregar — tente recarregar a página');
+  }
 }
 
 // ═══════════════════════════════════════════
