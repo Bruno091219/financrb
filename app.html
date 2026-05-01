@@ -813,13 +813,20 @@ let STATE = {
 // ═══════════════════════════════════════════
 // DATABASE LAYER
 // ═══════════════════════════════════════════
+function withTimeout(promise,ms=4000,fallback=null){
+  return Promise.race([
+    promise,
+    new Promise(resolve=>setTimeout(()=>resolve({data:fallback,error:{message:'timeout'}}),ms))
+  ]);
+}
+
 const DB = {
   setSyncing(v){STATE.syncing=v;const dot=document.getElementById('sync-dot');if(dot){dot.className='sync-dot '+(v?'syncing':'synced');}},
 
   async loadItems(){
     for(let attempt=1;attempt<=3;attempt++){
-      const{data,error}=await db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false});
-      if(error){console.error('[loadItems] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      const{data,error}=await withTimeout(db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false}),4000,[]);
+      if(error){console.error('[loadItems] erro/timeout tentativa',attempt,error.message);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
       STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
       console.log('[loadItems] tentativa',attempt,'— items carregados:',STATE.items.length);
       if(STATE.items.length>0||attempt===3)break;
@@ -857,8 +864,8 @@ const DB = {
 
   async loadBudgets(){
     for(let attempt=1;attempt<=3;attempt++){
-      const{data,error}=await db.from('budgets').select('*').eq('user_id',STATE.user.id);
-      if(error){console.error('[loadBudgets] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      const{data,error}=await withTimeout(db.from('budgets').select('*').eq('user_id',STATE.user.id),4000,[]);
+      if(error){console.error('[loadBudgets] erro/timeout tentativa',attempt,error.message);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
       STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
       console.log('[loadBudgets] tentativa',attempt,'— metas carregadas:',Object.keys(STATE.budgets).length);
       if(Object.keys(STATE.budgets).length>0||attempt===3)break;
@@ -883,8 +890,8 @@ const DB = {
 
   async loadProfile(){
     for(let attempt=1;attempt<=3;attempt++){
-      const{data,error}=await db.from('profiles').select('*').eq('id',STATE.user.id).single();
-      if(error&&error.code!=='PGRST116'){console.error('[loadProfile] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      const{data,error}=await withTimeout(db.from('profiles').select('*').eq('id',STATE.user.id).single());
+      if(error&&error.code!=='PGRST116'){console.error('[loadProfile] erro/timeout tentativa',attempt,error.message);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
       if(data){
         STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false,modo:data.modo||'completo'};
         STATE._isFirstTime=false;
@@ -1587,16 +1594,19 @@ async function initApp(user){
   try{
     // Cada chamada isolada — falha individual não bloqueia as demais
     console.log('[INIT] carregando perfil...');
-    try{await DB.loadProfile();console.log('[INIT] perfil ok:',STATE.profile);}
+    try{await DB.loadProfile();}
     catch(e){console.error('[INIT] loadProfile falhou:',e);STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};}
+    console.log('[INIT] perfil carregado:',STATE.profile.name);
 
     console.log('[INIT] carregando items...');
-    try{await DB.loadItems();console.log('[INIT] items ok:',STATE.items.length);}
+    try{await DB.loadItems();}
     catch(e){console.error('[INIT] loadItems falhou:',e);STATE.items=[];}
+    console.log('[INIT] items carregados:',STATE.items.length);
 
     console.log('[INIT] carregando metas...');
-    try{await DB.loadBudgets();console.log('[INIT] metas ok:',Object.keys(STATE.budgets).length);}
+    try{await DB.loadBudgets();}
     catch(e){console.error('[INIT] loadBudgets falhou:',e);STATE.budgets={};}
+    console.log('[INIT] budgets carregados:',Object.keys(STATE.budgets).length);
 
     // Apply theme
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
