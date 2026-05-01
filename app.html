@@ -1612,15 +1612,35 @@ async function boot(){
   const params=new URLSearchParams(location.search);
   if(params.get('reset')==='true'){window.history.replaceState({},'',location.pathname);}
 
-  // Auth state listener
+  const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';};
+
+  // _booted impede double-init caso onAuthStateChange e o fallback resolvam juntos
+  let _booted=false;
+
+  // Auth state listener — caminho principal
   db.auth.onAuthStateChange(async(event,session)=>{
+    _booted=true;
     if(session?.user){await initApp(session.user);}
-    else{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';}
+    else{_showAuth();}
   });
 
-  // Check existing session
-  const{data:{session}}=await db.auth.getSession();
-  if(!session){document.getElementById('auth-screen').style.display='';}
+  // getSession com timeout de 5 s — evita trava silenciosa no reload
+  const session=await Promise.race([
+    db.auth.getSession().then(r=>r.data.session),
+    new Promise(resolve=>setTimeout(()=>resolve(null),5000))
+  ]);
+
+  // Se onAuthStateChange já disparou, não faz mais nada
+  if(_booted)return;
+
+  if(session?.user){
+    // Sessão existe mas onAuthStateChange não disparou — inicia o app diretamente
+    _booted=true;
+    await initApp(session.user);
+  }else{
+    // Sem sessão ou timeout de 5 s — mostra login
+    _showAuth();
+  }
 }
 
 boot();
