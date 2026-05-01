@@ -773,7 +773,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <script>
 // ═══════════════════════════════════════════
 // SUPABASE INIT
@@ -1555,6 +1555,9 @@ async function initApp(user){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
   document.getElementById('onboarding-overlay').style.display='none';
+
+  const testResult=await db.from('items').select('count').limit(1);
+  console.log('[DB TEST]',JSON.stringify(testResult));
 
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
