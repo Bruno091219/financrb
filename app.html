@@ -779,7 +779,13 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 // SUPABASE INIT
 // ═══════════════════════════════════════════
 const { createClient } = supabase;
-const db = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const db = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 
 // ═══════════════════════════════════════════
 // CONSTANTS
@@ -813,7 +819,7 @@ let STATE = {
 // ═══════════════════════════════════════════
 // DATABASE LAYER
 // ═══════════════════════════════════════════
-function withTimeout(promise,ms=4000,fallback=null){
+function withTimeout(promise,ms=8000,fallback=null){
   return Promise.race([
     promise,
     new Promise(resolve=>setTimeout(()=>resolve({data:fallback,error:{message:'timeout'}}),ms))
@@ -1582,6 +1588,13 @@ async function initApp(user){
   // _hideLoading e timeout definidos ANTES de qualquer chamada async
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
+
+  // Força renovação do token antes das queries — necessário após F5
+  try{
+    const{data:{session:freshSession}}=await db.auth.getSession();
+    if(freshSession)await db.auth.setSession(freshSession);
+    console.log('[INIT] sessão renovada, user:',freshSession?.user?.id);
+  }catch(e){console.warn('[INIT] não foi possível renovar sessão:',e.message);}
 
   // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
