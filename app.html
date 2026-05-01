@@ -23,7 +23,7 @@ const CONFIG = {
   STRIPE_PAYMENT_LINK:'https://buy.stripe.com/SEU_LINK_PRO',   // Payment Link do plano Pro
   STRIPE_PORTAL_URL:  'https://billing.stripe.com/p/SEU_PORTAL', // Customer Portal
   TRIAL_DAYS:         15,   // dias de trial gratuito
-  APP_URL:            'https://financrb.luxea.com.br',
+  APP_URL:            'https://financrb.vercel.app',
 };
 </script>
 
@@ -1315,7 +1315,7 @@ async function processVoice(text){
     const{data:{session}}=await db.auth.getSession();
     const token=session?.access_token;
     if(!token){toast('Sessão expirada — faça login novamente');return;}
-    const resp=await fetch('/.netlify/functions/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'voice',text,token})});
+    const resp=await fetch('/api/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'voice',text,token})});
     if(!resp.ok){const err=await resp.json().catch(()=>({}));toast(err.error||'Erro ao processar voz');return;}
     const data=await resp.json();
     if(STATE.voiceCancelled)return;
@@ -1343,7 +1343,7 @@ async function readOCR(event,scope){
     const{data:{session}}=await db.auth.getSession();
     const token=session?.access_token;
     if(!token){toast('Sessão expirada — faça login novamente');return;}
-    const resp=await fetch('/.netlify/functions/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'ocr',image:b64,mediaType:file.type||'image/jpeg',token})});
+    const resp=await fetch('/api/ai-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'ocr',image:b64,mediaType:file.type||'image/jpeg',token})});
     if(!resp.ok){const err=await resp.json().catch(()=>({}));toast(err.error||'Erro ao ler comprovante');return;}
     const data=await resp.json();
     const parsed=JSON.parse(data.content.map(c=>c.text||'').join('').replace(/```json?|```/g,'').trim());
