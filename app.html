@@ -1551,6 +1551,7 @@ function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();re
 // INIT APP (after auth)
 // ═══════════════════════════════════════════
 async function initApp(user){
+  if(_appInitialized)return;_appInitialized=true;
   STATE.user=user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
@@ -1609,6 +1610,7 @@ async function initApp(user){
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
+let _appInitialized=false;
 async function boot(){
   if(CONFIG.STRIPE_PAYMENT_LINK.includes('SEU_LINK')||CONFIG.STRIPE_PORTAL_URL.includes('SEU_PORTAL')){
     console.warn('[Finan.RB] ATENÇÃO: Configure STRIPE_PAYMENT_LINK e STRIPE_PORTAL_URL no CONFIG antes de publicar.');
