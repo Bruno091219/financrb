@@ -817,10 +817,15 @@ const DB = {
   setSyncing(v){STATE.syncing=v;const dot=document.getElementById('sync-dot');if(dot){dot.className='sync-dot '+(v?'syncing':'synced');}},
 
   async loadItems(){
-    const{data,error}=await db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false});
-    if(error)throw error;
-    STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
-    console.log('[DB.loadItems] itens carregados do Supabase:',STATE.items.length,STATE.items.map(i=>({id:i.id,desc:i.desc})));
+    for(let attempt=1;attempt<=3;attempt++){
+      const{data,error}=await db.from('items').select('*').eq('user_id',STATE.user.id).order('date',{ascending:false}).order('created_at',{ascending:false});
+      if(error){console.error('[loadItems] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
+      console.log('[loadItems] tentativa',attempt,'— items carregados:',STATE.items.length);
+      if(STATE.items.length>0||attempt===3)break;
+      console.log('[loadItems] retornou vazio, tentando novamente...');
+      await new Promise(r=>setTimeout(r,1000));
+    }
   },
 
   async addItem(item){
@@ -851,9 +856,15 @@ const DB = {
   },
 
   async loadBudgets(){
-    const{data,error}=await db.from('budgets').select('*').eq('user_id',STATE.user.id);
-    if(error)throw error;
-    STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
+    for(let attempt=1;attempt<=3;attempt++){
+      const{data,error}=await db.from('budgets').select('*').eq('user_id',STATE.user.id);
+      if(error){console.error('[loadBudgets] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
+      console.log('[loadBudgets] tentativa',attempt,'— metas carregadas:',Object.keys(STATE.budgets).length);
+      if(Object.keys(STATE.budgets).length>0||attempt===3)break;
+      console.log('[loadBudgets] retornou vazio, tentando novamente...');
+      await new Promise(r=>setTimeout(r,1000));
+    }
   },
 
   async setBudget(cat,amount){
@@ -871,13 +882,17 @@ const DB = {
   },
 
   async loadProfile(){
-    const{data,error}=await db.from('profiles').select('*').eq('id',STATE.user.id).single();
-    if(error&&error.code!=='PGRST116')throw error;
-    if(data){
-      STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false,modo:data.modo||'completo'};
-      STATE._isFirstTime=false;
-    }else{
-      STATE._isFirstTime=true;
+    for(let attempt=1;attempt<=3;attempt++){
+      const{data,error}=await db.from('profiles').select('*').eq('id',STATE.user.id).single();
+      if(error&&error.code!=='PGRST116'){console.error('[loadProfile] erro tentativa',attempt,error);if(attempt<3)await new Promise(r=>setTimeout(r,1000));continue;}
+      if(data){
+        STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false,modo:data.modo||'completo'};
+        STATE._isFirstTime=false;
+      }else{
+        STATE._isFirstTime=true;
+      }
+      console.log('[loadProfile] tentativa',attempt,'— perfil ok, isFirstTime:',STATE._isFirstTime);
+      break;
     }
   },
 
