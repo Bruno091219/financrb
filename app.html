@@ -834,8 +834,10 @@ function getAuthHeaders(){
 
 async function supaFetch(path,opts={}){
   const url=CONFIG.SUPABASE_URL+'/rest/v1/'+path;
+  const headers=getAuthHeaders();
+  console.log('[supaFetch]',path.split('?')[0],'token:',STATE.token?'user-jwt':'ANON-FALLBACK');
   const resp=await Promise.race([
-    fetch(url,{...opts,headers:{...getAuthHeaders(),...(opts.headers||{})}}),
+    fetch(url,{...opts,headers:{...headers,...(opts.headers||{})}}),
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000))
   ]);
   if(!resp.ok){let msg;try{const j=await resp.json();msg=j.message||j.error||resp.status;}catch{msg=resp.status;}throw new Error(String(msg));}
@@ -1601,7 +1603,7 @@ function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();re
 // INIT APP (after auth)
 // ═══════════════════════════════════════════
 async function initApp(user){
-  if(STATE.items.length>0&&STATE.user?.id===user.id)return;
+  if(STATE.user?.id===user.id&&STATE.items.length>0)return;
   STATE.user=user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
@@ -1611,12 +1613,29 @@ async function initApp(user){
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
 
-  // Renova token e salva em STATE — usado pelo supaFetch (fetch direto, sem SDK)
+  // 1. Obtém token fresco — sem ele todas as queries retornam vazio (RLS)
   try{
-    const{data:{session:freshSession}}=await db.auth.getSession();
-    if(freshSession){await db.auth.setSession(freshSession);STATE.token=freshSession.access_token;}
-    console.log('[INIT] sessão renovada, user:',freshSession?.user?.id,'token:',STATE.token?'ok':'ausente');
-  }catch(e){console.warn('[INIT] não foi possível renovar sessão:',e.message);}
+    const{data:{session}}=await Promise.race([
+      db.auth.getSession(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
+    ]);
+    STATE.token=session?.access_token||null;
+    console.log('[INIT] token:',STATE.token?'ok':'AUSENTE');
+  }catch(e){
+    console.warn('[INIT] getSession falhou:',e.message);
+    STATE.token=null;
+  }
+
+  if(!STATE.token){
+    try{
+      const{data:refreshData}=await Promise.race([
+        db.auth.refreshSession(),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
+      ]);
+      STATE.token=refreshData?.session?.access_token||null;
+      console.log('[INIT] token após refresh:',STATE.token?'ok':'FALHOU');
+    }catch(e){console.warn('[INIT] refreshSession falhou:',e.message);}
+  }
 
   // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
