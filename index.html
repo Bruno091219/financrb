@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Finan.RB — Controle financeiro pessoal e empresarial</title>
+<title>RB Financ — Controle financeiro pessoal e empresarial</title>
 <meta name="description" content="Controle seus gastos pessoais (PF) e empresariais (PJ) em um só lugar. Categorização automática, gráficos, metas e muito mais."/>
-<meta property="og:title" content="Finan.RB — Controle financeiro pessoal e empresarial"/>
+<meta property="og:title" content="RB Financ — Controle financeiro pessoal e empresarial"/>
 <meta property="og:description" content="Separe PF e PJ, defina metas, leia comprovantes com câmera e acompanhe tudo em tempo real."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://financrb.vercel.app"/>
 <meta property="og:image" content="https://financrb.vercel.app/og.png"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="theme-color" content="#1a8a4a"/>
+<meta name="theme-color" content="#0f2d5e"/>
 <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
 <link rel="manifest" href="/manifest.webmanifest"/>
 <link rel="apple-touch-icon" href="/icon-192.png"/>
@@ -22,7 +22,7 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script> -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--green:#1a8a4a;--green-m:#22c98a;--green-l:#e8f5ee;--blue:#2563eb;--text:#0d0d0d;--text2:#4b5563;--text3:#9ca3af;--bg:#f9fafb;--surface:#fff;--border:#e5e7eb;--r:16px;--f:'Outfit',sans-serif}
+:root{--green:#185FA5;--green-m:#378ADD;--green-l:#E6F1FB;--blue:#2563eb;--text:#0d0d0d;--text2:#4b5563;--text3:#9ca3af;--bg:#f9fafb;--surface:#fff;--border:#e5e7eb;--r:16px;--f:'Outfit',sans-serif}
 body{font-family:var(--f);background:var(--surface);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 
@@ -122,7 +122,7 @@ h1 span{color:var(--green)}
 .faq-item.open .faq-a{display:block}
 
 /* CTA BOTTOM */
-.cta-section{background:linear-gradient(135deg,#0d5c30,#1a8a4a);padding:80px 24px;text-align:center}
+.cta-section{background:linear-gradient(135deg,#0d5c30,#0f2d5e);padding:80px 24px;text-align:center}
 .cta-title{font-size:clamp(28px,4vw,42px);font-weight:800;color:#fff;letter-spacing:-1.2px;margin-bottom:12px}
 .cta-sub{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:32px;line-height:1.6}
 .cta-btn{display:inline-block;background:#fff;color:var(--green);padding:15px 36px;border-radius:12px;font-family:var(--f);font-size:16px;font-weight:800;cursor:pointer;transition:all .15s;border:none;letter-spacing:-.3px}
@@ -132,7 +132,7 @@ h1 span{color:var(--green)}
 /* FOOTER */
 footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-align:center}
 .footer-logo{font-size:18px;font-weight:700;letter-spacing:-.6px;color:#fff;margin-bottom:12px}
-.footer-logo span{color:#22c98a}
+.footer-logo span{color:#378ADD}
 .footer-links{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
 .footer-links a{color:rgba(255,255,255,.5);transition:color .15s}
 .footer-links a:hover{color:#fff}
@@ -142,7 +142,7 @@ footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-alig
 <body>
 
 <nav>
-  <div class="nav-logo">Finan<span>.</span>RB</div>
+  <div class="nav-logo" style="display:flex;align-items:center;gap:8px"><div style="width:3px;height:32px;background:#0f2d5e;border-radius:2px;flex-shrink:0"></div><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:19px;font-weight:400;letter-spacing:3px;color:#0f2d5e;line-height:1">RB</span><span style="font-size:7px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#185FA5;margin-top:2px">Financ</span></div></div>
   <div class="nav-links">
     <a href="#features">Recursos</a>
     <a href="#pricing">Planos</a>
@@ -381,13 +381,13 @@ footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-alig
         </div>
       </div>
       <ul class="price-features">
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Gastos ilimitados</b></li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>PF + PJ separados</li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Gráficos avançados + anomalias</li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>OCR de comprovantes</b></li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Entrada por voz</b></li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Relatório PDF mensal</b></li>
-        <li><svg viewBox="0 0 24 24" stroke="#1a8a4a" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Exportação CSV</li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Gastos ilimitados</b></li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>PF + PJ separados</li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Gráficos avançados + anomalias</li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>OCR de comprovantes</b></li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Entrada por voz</b></li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><b>Relatório PDF mensal</b></li>
+        <li><svg viewBox="0 0 24 24" stroke="#0f2d5e" stroke-width="2.5" fill="none" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Exportação CSV</li>
       </ul>
       <a href="/app.html" class="price-btn primary">Começar trial grátis</a>
     </div>
@@ -403,7 +403,7 @@ footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-alig
     <div class="testimonial">
       <p class="test-text">"Finalmente consegui separar o que é meu do que é da empresa. A função de PF e PJ é exatamente o que eu precisava como MEI."</p>
       <div class="test-author">
-        <div class="test-avatar" style="background:#1a8a4a">A</div>
+        <div class="test-avatar" style="background:#0f2d5e">A</div>
         <div><div class="test-name">Ana Paula</div><div class="test-role">MEI · Designer</div></div>
       </div>
     </div>
@@ -467,7 +467,7 @@ footer{background:#0d0d0d;color:rgba(255,255,255,.5);padding:40px 24px;text-alig
 </div>
 
 <footer>
-  <div class="footer-logo">Finan<span>.</span>RB</div>
+  <div class="footer-logo" style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><div style="width:3px;height:32px;background:#fff;border-radius:2px;flex-shrink:0"></div><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:19px;font-weight:400;letter-spacing:3px;color:#fff;line-height:1">RB</span><span style="font-size:7px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px">Financ</span></div></div>
   <div class="footer-links">
     <a href="/app.html">Entrar</a>
     <a href="/privacy.html">Política de Privacidade</a>

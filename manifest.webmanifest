@@ -1,12 +1,12 @@
 {
-  "name": "Finan.RB",
-  "short_name": "Finan.RB",
+  "name": "RB Financ",
+  "short_name": "RB Financ",
   "description": "Controle financeiro pessoal e empresarial",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f5f6f2",
-  "theme_color": "#1a8a4a",
+  "theme_color": "#0f2d5e",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
   "icons": [
