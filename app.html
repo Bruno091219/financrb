@@ -1685,28 +1685,27 @@ async function boot(){
   // _booted impede que o fallback do getSession chame initApp se onAuthStateChange já o fez
   let _booted=false;
 
-  // Auth state listener — caminho principal
+  // Auth state listener — ignora INITIAL_SESSION (pode chegar com user undefined
+  // enquanto o Supabase ainda lê o storage; SIGNED_IN carrega o user real)
   db.auth.onAuthStateChange(async(event,session)=>{
     console.log('[AUTH] evento:',event,'user:',session?.user?.id);
+    if(event==='INITIAL_SESSION')return;
     _booted=true;
     if(session?.user){await initApp(session.user);}
     else{_showAuth();}
   });
 
-  // getSession com timeout de 5 s — evita trava silenciosa no reload
+  // getSession com timeout de 5 s — fallback caso onAuthStateChange não dispare
   const session=await Promise.race([
     db.auth.getSession().then(r=>r.data.session),
     new Promise(resolve=>setTimeout(()=>resolve(null),5000))
   ]);
 
-  // Se onAuthStateChange já disparou, não faz mais nada
-  if(_booted)return;
-
   if(session?.user){
-    // Sessão existe mas onAuthStateChange não disparou — inicia o app diretamente
+    // Sempre tenta iniciar — initApp tem proteção interna contra double-init
     await initApp(session.user);
-  }else{
-    // Sem sessão ou timeout de 5 s — mostra login
+  }else if(!_booted){
+    // Sem sessão e listener não disparou — mostra login
     _showAuth();
   }
 }
