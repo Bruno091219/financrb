@@ -4,9 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Finan.RB"/>
-<meta name="theme-color" content="#ffffff" id="meta-theme"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#1a8a4a" id="meta-theme"/>
 <title>Finan.RB</title>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
@@ -23,7 +28,7 @@ const CONFIG = {
   STRIPE_PAYMENT_LINK:'https://buy.stripe.com/SEU_LINK_PRO',   // Payment Link do plano Pro
   STRIPE_PORTAL_URL:  'https://billing.stripe.com/p/SEU_PORTAL', // Customer Portal
   TRIAL_DAYS:         15,   // dias de trial gratuito
-  APP_URL:            'https://financrb.vercel.app',
+  APP_URL:            'https://financrb.vercel.app/app',
 };
 </script>
 
@@ -1730,6 +1735,16 @@ async function boot(){
 }
 
 boot();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').then(r=>{
+      console.log('[SW] registrado:',r.scope);
+    }).catch(e=>{
+      console.warn('[SW] falhou:',e.message);
+    });
+  });
+}
 </script>
 </body>
 </html>
