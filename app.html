@@ -1601,7 +1601,7 @@ function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();re
 // INIT APP (after auth)
 // ═══════════════════════════════════════════
 async function initApp(user){
-  if(_appInitialized)return;_appInitialized=true;
+  if(STATE.items.length>0&&STATE.user?.id===user.id)return;
   STATE.user=user;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
@@ -1670,8 +1670,8 @@ async function initApp(user){
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
-let _appInitialized=false;
 async function boot(){
+  console.log('[BOOT] iniciando...');
   if(CONFIG.STRIPE_PAYMENT_LINK.includes('SEU_LINK')||CONFIG.STRIPE_PORTAL_URL.includes('SEU_PORTAL')){
     console.warn('[Finan.RB] ATENÇÃO: Configure STRIPE_PAYMENT_LINK e STRIPE_PORTAL_URL no CONFIG antes de publicar.');
   }
@@ -1682,11 +1682,12 @@ async function boot(){
 
   const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';};
 
-  // _booted impede double-init caso onAuthStateChange e o fallback resolvam juntos
+  // _booted impede que o fallback do getSession chame initApp se onAuthStateChange já o fez
   let _booted=false;
 
   // Auth state listener — caminho principal
   db.auth.onAuthStateChange(async(event,session)=>{
+    console.log('[AUTH] evento:',event,'user:',session?.user?.id);
     _booted=true;
     if(session?.user){await initApp(session.user);}
     else{_showAuth();}
@@ -1703,7 +1704,6 @@ async function boot(){
 
   if(session?.user){
     // Sessão existe mas onAuthStateChange não disparou — inicia o app diretamente
-    _booted=true;
     await initApp(session.user);
   }else{
     // Sem sessão ou timeout de 5 s — mostra login
