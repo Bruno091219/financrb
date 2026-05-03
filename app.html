@@ -25,8 +25,8 @@
 const CONFIG = {
   SUPABASE_URL:       'https://rlgxosvlpetaqakxpevj.supabase.co',
   SUPABASE_ANON_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZ3hvc3ZscGV0YXFha3hwZXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTc2OTEsImV4cCI6MjA5Mjc5MzY5MX0.ZuuqcR3K1JIwcYvjEyN0iC8GdNJDC04LpryBsQzdKeM',
-  STRIPE_PAYMENT_LINK:'https://buy.stripe.com/SEU_LINK_PRO',   // Payment Link do plano Pro
-  STRIPE_PORTAL_URL:  'https://billing.stripe.com/p/SEU_PORTAL', // Customer Portal
+  STRIPE_PAYMENT_LINK:'https://buy.stripe.com/dRm00j7LoalP8VL5pl5kk00',
+  STRIPE_PORTAL_URL:  'https://billing.stripe.com/p/login/dRm00j7LoalP8VL5pl5kk00',
   TRIAL_DAYS:         15,   // dias de trial gratuito
   APP_URL:            'https://financrb.vercel.app/app',
 };
@@ -1087,9 +1087,10 @@ async function doLogout(){
 // UPGRADE / STRIPE
 // ═══════════════════════════════════════════
 function openUpgrade(){
-  const email=STATE.user?.email||'';
-  const url=CONFIG.STRIPE_PAYMENT_LINK+(email?'?prefilled_email='+encodeURIComponent(email):'');
-  window.open(url,'_blank');
+  const params=new URLSearchParams();
+  if(STATE.user?.email)params.set('prefilled_email',STATE.user.email);
+  if(STATE.user?.id)params.set('client_reference_id',STATE.user.id);
+  window.open(CONFIG.STRIPE_PAYMENT_LINK+'?'+params.toString(),'_blank');
   closeModal('modal-paywall');
   toast('Redirecionando para o pagamento...');
 }
