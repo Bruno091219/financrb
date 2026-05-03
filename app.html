@@ -871,16 +871,14 @@ const DB = {
   setSyncing(v){STATE.syncing=v;const dot=document.getElementById('sync-dot');if(dot){dot.className='sync-dot '+(v?'syncing':'synced');}},
 
   async loadItems(){
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const data=await supaFetch(`items?user_id=eq.${STATE.user.id}&order=date.desc,created_at.desc&select=*`);
-        STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
-        console.log('[loadItems] tentativa',attempt,'— items carregados:',STATE.items.length);
-        if(STATE.items.length>0||attempt===3)break;
-        console.log('[loadItems] retornou vazio, tentando novamente...');
-      }catch(e){console.error('[loadItems] erro/timeout tentativa',attempt,e.message);if(attempt===3)throw e;}
-      await new Promise(r=>setTimeout(r,1000));
-    }
+    const{data,error}=await db.from('items')
+      .select('*')
+      .eq('user_id',STATE.user.id)
+      .order('date',{ascending:false})
+      .order('created_at',{ascending:false});
+    if(error)throw new Error(error.message);
+    STATE.items=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec}));
+    console.log('[loadItems] items carregados:',STATE.items.length);
   },
 
   async addItem(item){
@@ -911,17 +909,12 @@ const DB = {
   },
 
   async loadBudgets(){
-    const path=`budgets?user_id=eq.${STATE.user.id}&select=*`;
-    console.log('[loadBudgets] URL:',CONFIG.SUPABASE_URL+'/rest/v1/'+path);
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const data=await supaFetch(path);
-        STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
-        console.log('[loadBudgets] tentativa',attempt,'— metas carregadas:',Object.keys(STATE.budgets).length);
-        break;
-      }catch(e){console.error('[loadBudgets] erro/timeout tentativa',attempt,e.message);if(attempt===3)throw e;}
-      await new Promise(r=>setTimeout(r,1000));
-    }
+    const{data,error}=await db.from('budgets')
+      .select('*')
+      .eq('user_id',STATE.user.id);
+    if(error)throw new Error(error.message);
+    STATE.budgets={};(data||[]).forEach(r=>{STATE.budgets[r.cat]=parseFloat(r.amount);});
+    console.log('[loadBudgets] metas carregadas:',Object.keys(STATE.budgets).length);
   },
 
   async setBudget(cat,amount){
@@ -939,21 +932,18 @@ const DB = {
   },
 
   async loadProfile(){
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const rows=await supaFetch(`profiles?id=eq.${STATE.user.id}&select=*`);
-        const data=rows[0]||null;
-        if(data){
-          STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false,modo:data.modo||'completo'};
-          STATE._isFirstTime=false;
-        }else{
-          STATE._isFirstTime=true;
-        }
-        console.log('[loadProfile] tentativa',attempt,'— perfil ok, isFirstTime:',STATE._isFirstTime);
-        break;
-      }catch(e){console.error('[loadProfile] erro/timeout tentativa',attempt,e.message);if(attempt===3)throw e;}
-      await new Promise(r=>setTimeout(r,1000));
+    const{data,error}=await db.from('profiles')
+      .select('*')
+      .eq('id',STATE.user.id)
+      .maybeSingle();
+    if(error)throw new Error(error.message);
+    if(data){
+      STATE.profile={name:data.name||'',close_day:data.close_day||1,plan:data.plan||'free',dark:data.dark||false,modo:data.modo||'completo'};
+      STATE._isFirstTime=false;
+    }else{
+      STATE._isFirstTime=true;
     }
+    console.log('[loadProfile] perfil ok, isFirstTime:',STATE._isFirstTime);
   },
 
   async saveProfile(updates){
@@ -1658,31 +1648,12 @@ async function initApp(user){
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
 
-  // 1. Obtém token fresco — sem ele todas as queries retornam vazio (RLS)
+  // Sincroniza STATE.token a partir do cliente Supabase (usado pelo visibilitychange e supaFetch legado)
+  // As queries de leitura usam db.from() e não dependem de STATE.token
   try{
-    const{data:{session}}=await Promise.race([
-      db.auth.getSession(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
-    ]);
-    // Descarta token expirado para forçar refresh abaixo (margem de 60s)
-    const isExpired=!session?.access_token||!session?.expires_at||(session.expires_at*1000<Date.now()+60000);
-    STATE.token=isExpired?null:(session?.access_token||null);
-    console.log('[INIT] token:',STATE.token?'ok':(session?.access_token?'EXPIRADO':'AUSENTE'));
-  }catch(e){
-    console.warn('[INIT] getSession falhou:',e.message);
-    STATE.token=null;
-  }
-
-  if(!STATE.token){
-    try{
-      const{data:refreshData}=await Promise.race([
-        db.auth.refreshSession(),
-        new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
-      ]);
-      STATE.token=refreshData?.session?.access_token||null;
-      console.log('[INIT] token após refresh:',STATE.token?'ok':'FALHOU');
-    }catch(e){console.warn('[INIT] refreshSession falhou:',e.message);}
-  }
+    const{data:{session}}=await db.auth.getSession();
+    STATE.token=session?.access_token||null;
+  }catch(e){STATE.token=null;}
 
   // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
