@@ -1,4 +1,4 @@
-const CACHE = 'financrb-v1';
+const CACHE = 'financrb-v2';
 const SHELL = ['/app', '/app.html', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', e => {
@@ -29,6 +29,21 @@ self.addEventListener('fetch', e => {
     e.request.method !== 'GET'
   ) return;
 
+  // Network-first para HTML e manifest — garante que código atualizado sempre chega ao usuário
+  if (url.includes('/app') || url.endsWith('.html') || url.endsWith('.webmanifest')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first para demais assets estáticos
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
       if (resp.ok) {

@@ -1061,10 +1061,20 @@ async function doResetPassword(){
   if(error)showAuthError(error.message);else toast('E-mail de recuperação enviado!');
 }
 
+let _logoutAt=0;
 async function doLogout(){
-  if(!confirm('Sair da conta?'))return;
-  try{await db.auth.signOut();}catch(e){console.error('signOut error',e);}
-  STATE.user=null;STATE.items=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};
+  const now=Date.now();
+  if(now-_logoutAt>4000){_logoutAt=now;toast('Toque em "Sair" novamente para confirmar');return;}
+  _logoutAt=0;
+  try{
+    await Promise.race([
+      db.auth.signOut({scope:'local'}),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),3000))
+    ]);
+  }catch(e){console.error('signOut error',e);}
+  // Limpa explicitamente todas as chaves Supabase do localStorage
+  try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  STATE.user=null;STATE.token=null;STATE.items=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
   document.getElementById('onboarding-overlay').style.display='none';
   document.getElementById('home-loading').style.display='';
   document.getElementById('home-content').style.display='none';
@@ -1624,8 +1634,10 @@ async function initApp(user){
       db.auth.getSession(),
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
     ]);
-    STATE.token=session?.access_token||null;
-    console.log('[INIT] token:',STATE.token?'ok':'AUSENTE');
+    // Descarta token expirado para forçar refresh abaixo (margem de 60s)
+    const isExpired=!session?.access_token||!session?.expires_at||(session.expires_at*1000<Date.now()+60000);
+    STATE.token=isExpired?null:(session?.access_token||null);
+    console.log('[INIT] token:',STATE.token?'ok':(session?.access_token?'EXPIRADO':'AUSENTE'));
   }catch(e){
     console.warn('[INIT] getSession falhou:',e.message);
     STATE.token=null;
@@ -1709,32 +1721,49 @@ async function boot(){
   // _booted impede que o fallback do getSession chame initApp se onAuthStateChange já o fez
   let _booted=false;
 
-  // Auth state listener — ignora INITIAL_SESSION (pode chegar com user undefined
-  // enquanto o Supabase ainda lê o storage; SIGNED_IN carrega o user real)
+  // INITIAL_SESSION é o evento principal de restauração de sessão no reload/reopen
   db.auth.onAuthStateChange(async(event,session)=>{
     console.log('[AUTH] evento:',event,'user:',session?.user?.id);
-    if(event==='INITIAL_SESSION')return;
+    if(event==='INITIAL_SESSION'){
+      // Sessão válida encontrada no storage → restaura imediatamente
+      if(session?.user){_booted=true;await initApp(session.user);}
+      // Sem user aqui = token expirado aguardando TOKEN_REFRESHED — não mostra login ainda
+      return;
+    }
     _booted=true;
     if(session?.user){await initApp(session.user);}
     else{_showAuth();}
   });
 
-  // getSession com timeout de 5 s — fallback caso onAuthStateChange não dispare
+  // Fallback: se INITIAL_SESSION não restaurou (token expirado em refresh), usa getSession
   const session=await Promise.race([
     db.auth.getSession().then(r=>r.data.session),
     new Promise(resolve=>setTimeout(()=>resolve(null),5000))
   ]);
 
-  if(session?.user){
-    // Sempre tenta iniciar — initApp tem proteção interna contra double-init
-    await initApp(session.user);
-  }else if(!_booted){
-    // Sem sessão e listener não disparou — mostra login
-    _showAuth();
+  if(!_booted){
+    if(session?.user){await initApp(session.user);}
+    else{_showAuth();}
   }
 }
 
 boot();
+
+// Renova token quando PWA volta ao foreground (fechar e reabrir o app)
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||!STATE.user)return;
+  try{
+    const{data:{session}}=await db.auth.getSession();
+    if(!session?.access_token)return;
+    const isExpired=!session.expires_at||(session.expires_at*1000<Date.now()+60000);
+    if(isExpired){
+      const{data}=await db.auth.refreshSession();
+      if(data?.session?.access_token){STATE.token=data.session.access_token;console.log('[VISIBILITY] token renovado');}
+    }else{
+      STATE.token=session.access_token;
+    }
+  }catch(e){console.warn('[VISIBILITY] erro ao renovar token:',e.message);}
+});
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
