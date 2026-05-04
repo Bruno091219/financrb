@@ -1646,14 +1646,8 @@ async function initApp(user){
 
   // _hideLoading e timeout definidos ANTES de qualquer chamada async
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
-  const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},8000);
-
-  // Sincroniza STATE.token a partir do cliente Supabase (usado pelo visibilitychange e supaFetch legado)
-  // As queries de leitura usam db.from() e não dependem de STATE.token
-  try{
-    const{data:{session}}=await db.auth.getSession();
-    STATE.token=session?.access_token||null;
-  }catch(e){STATE.token=null;}
+  const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},15000);
+  // db.from() gerencia token/refresh internamente — não precisa de getSession() aqui
 
   // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
@@ -1736,10 +1730,10 @@ async function boot(){
     else{_showAuth();}
   });
 
-  // Fallback: se INITIAL_SESSION não restaurou (token expirado em refresh), usa getSession
+  // Fallback: aguarda getSession completar (inclui refresh se token expirado) — até 10s
   const session=await Promise.race([
     db.auth.getSession().then(r=>r.data.session),
-    new Promise(resolve=>setTimeout(()=>resolve(null),5000))
+    new Promise(resolve=>setTimeout(()=>resolve(null),10000))
   ]);
 
   if(!_booted){
