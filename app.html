@@ -1744,22 +1744,6 @@ async function boot(){
 
 boot();
 
-// Renova token quando PWA volta ao foreground (fechar e reabrir o app)
-document.addEventListener('visibilitychange',async()=>{
-  if(document.visibilityState!=='visible'||!STATE.user)return;
-  try{
-    const{data:{session}}=await db.auth.getSession();
-    if(!session?.access_token)return;
-    const isExpired=!session.expires_at||(session.expires_at*1000<Date.now()+60000);
-    if(isExpired){
-      const{data}=await db.auth.refreshSession();
-      if(data?.session?.access_token){STATE.token=data.session.access_token;console.log('[VISIBILITY] token renovado');}
-    }else{
-      STATE.token=session.access_token;
-    }
-  }catch(e){console.warn('[VISIBILITY] erro ao renovar token:',e.message);}
-});
-
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js').then(r=>{
