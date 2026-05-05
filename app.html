@@ -840,6 +840,13 @@ let STATE = {
   _isFirstTime: false,
 };
 
+function saveLocalCache(uid){
+  try{localStorage.setItem('rb_v1_'+uid,JSON.stringify({items:STATE.items,profile:STATE.profile,budgets:STATE.budgets}));}catch(e){}
+}
+function loadLocalCache(uid){
+  try{const r=localStorage.getItem('rb_v1_'+uid);return r?JSON.parse(r):null;}catch(e){return null;}
+}
+
 // ═══════════════════════════════════════════
 // DATABASE LAYER
 // ═══════════════════════════════════════════
@@ -1080,7 +1087,8 @@ async function doLogout(){
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),3000))
     ]);
   }catch(e){console.error('signOut error',e);}
-  // Limpa explicitamente todas as chaves Supabase do localStorage
+  // Limpa explicitamente todas as chaves Supabase do localStorage e o cache local
+  try{if(STATE.user?.id)localStorage.removeItem('rb_v1_'+STATE.user.id);}catch(e){}
   try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
   STATE.user=null;STATE.token=null;STATE.items=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
   document.getElementById('onboarding-overlay').style.display='none';
@@ -1154,7 +1162,7 @@ async function doAdd(desc,val,cat,tipo,date,rec){
   const item={id:Date.now(),desc,val,cat,tipo,date,rec:!!rec};
   STATE.items.unshift(item);
   renderAll();
-  try{await DB.addItem(item);}
+  try{await DB.addItem(item);saveLocalCache(STATE.user.id);}
   catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);renderAll();}
   return true;
 }
@@ -1170,7 +1178,7 @@ async function doAddParcelas(desc,val,cat,tipo,date,n){
     newItems.push({id:Date.now()+i*1000+Math.floor(Math.random()*1000),desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
   }
   STATE.items.unshift(...newItems);renderAll();
-  try{for(const item of newItems)await DB.addItem(item);toast(`${n} parcelas adicionadas`);}
+  try{for(const item of newItems)await DB.addItem(item);saveLocalCache(STATE.user.id);toast(`${n} parcelas adicionadas`);}
   catch(e){toast('Erro ao salvar parcelas');}
 }
 
@@ -1220,13 +1228,13 @@ async function saveEdit(){
   const updates={desc:document.getElementById('edit-desc').value.trim(),val:v,date:document.getElementById('edit-date').value,cat:document.getElementById('edit-cat').value,tipo:STATE.tipoEdit,rec:document.getElementById('edit-rec').checked};
   STATE.items[idx]={...STATE.items[idx],...updates};
   renderAll();closeModal('modal-edit');toast('Atualizado');
-  try{await DB.updateItem(id,updates);}catch(e){toast('Erro ao salvar');}
+  try{await DB.updateItem(id,updates);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao salvar');}
 }
 async function delItem(id){
   if(!confirm('Remover este gasto?'))return;
   STATE.items=STATE.items.filter(i=>i.id!==id);
   renderAll();toast('Removido');
-  try{await DB.deleteItem(id);}catch(e){toast('Erro ao remover');}
+  try{await DB.deleteItem(id);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao remover');}
 }
 
 // ═══════════════════════════════════════════
@@ -1236,11 +1244,11 @@ async function saveBudget(cat){
   const v=parseFloat(document.getElementById('budget-'+cat.replace(/[^a-z]/gi,'_')).value);
   if(!v||v<=0){toast('Informe um valor');return;}
   STATE.budgets[cat]=v;renderMetas();toast('Meta salva');
-  try{await DB.setBudget(cat,v);}catch(e){toast('Erro ao salvar meta');}
+  try{await DB.setBudget(cat,v);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao salvar meta');}
 }
 async function removeBudget(cat){
   delete STATE.budgets[cat];renderMetas();toast('Meta removida');
-  try{await DB.deleteBudget(cat);}catch(e){toast('Erro ao remover');}
+  try{await DB.deleteBudget(cat);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao remover');}
 }
 
 // ═══════════════════════════════════════════
@@ -1249,14 +1257,14 @@ async function removeBudget(cat){
 async function saveProfile(){
   STATE.profile.name=document.getElementById('cfg-name').value;
   STATE.profile.close_day=parseInt(document.getElementById('cfg-close-day').value,10)||1;
-  try{await DB.saveProfile({name:STATE.profile.name,close_day:STATE.profile.close_day,dark:STATE.profile.dark});}
+  try{await DB.saveProfile({name:STATE.profile.name,close_day:STATE.profile.close_day,dark:STATE.profile.dark});saveLocalCache(STATE.user.id);}
   catch(e){toast('Erro ao salvar configurações');}
 }
 
 // ═══════════════════════════════════════════
 // DARK MODE
 // ═══════════════════════════════════════════
-function toggleDark(){STATE.profile.dark=!STATE.profile.dark;document.getElementById('cfg-dark').checked=STATE.profile.dark;applyDark();DB.saveProfile({dark:STATE.profile.dark}).catch(()=>{});}
+function toggleDark(){STATE.profile.dark=!STATE.profile.dark;document.getElementById('cfg-dark').checked=STATE.profile.dark;applyDark();DB.saveProfile({dark:STATE.profile.dark}).then(()=>saveLocalCache(STATE.user.id)).catch(()=>{});}
 function applyDark(){
   STATE.profile.dark=document.getElementById('cfg-dark').checked;
   document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
@@ -1470,7 +1478,7 @@ async function clearAll(){
     const{error}=await db.from('items').delete().eq('user_id',STATE.user.id);
     if(error)throw error;
   }catch(e){toast('Erro ao apagar');return;}
-  STATE.items=[];renderAll();toast('Dados apagados');
+  STATE.items=[];saveLocalCache(STATE.user.id);renderAll();toast('Dados apagados');
 }
 
 // ═══════════════════════════════════════════
@@ -1647,7 +1655,6 @@ async function initApp(user){
   // _hideLoading e timeout definidos ANTES de qualquer chamada async
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';};
   const _loadingTimeout=setTimeout(()=>{_hideLoading();toast('Carregamento demorou — verifique a conexão');},15000);
-  // db.from() gerencia token/refresh internamente — não precisa de getSession() aqui
 
   // Setup UI síncrono
   const sel=document.getElementById('cfg-close-day');sel.innerHTML=Array.from({length:28},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
@@ -1657,44 +1664,51 @@ async function initApp(user){
   document.getElementById('m-desc').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('m-val').focus();});
   document.getElementById('m-val').addEventListener('keydown',e=>{if(e.key==='Enter')addModal();});
 
+  // Mostra dados do cache local imediatamente — elimina flash de tela vazia
+  const _cached=loadLocalCache(user.id);
+  if(_cached){
+    if(Array.isArray(_cached.items)&&_cached.items.length>0)STATE.items=_cached.items;
+    if(_cached.profile)STATE.profile={...STATE.profile,..._cached.profile};
+    if(_cached.budgets)STATE.budgets=_cached.budgets;
+    document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
+    applyModo();
+    clearTimeout(_loadingTimeout);
+    _hideLoading();
+    renderAll();
+  }
+
   try{
     // Cada chamada isolada — falha individual não bloqueia as demais
-    console.log('[INIT] carregando perfil...');
     try{await DB.loadProfile();}
-    catch(e){console.error('[INIT] loadProfile falhou:',e);STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};}
-    console.log('[INIT] perfil carregado:',STATE.profile.name);
+    catch(e){console.error('[INIT] loadProfile falhou:',e);if(!_cached)STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};}
 
-    console.log('[INIT] carregando items...');
     try{await DB.loadItems();}
-    catch(e){console.error('[INIT] loadItems falhou:',e);STATE.items=[];}
-    console.log('[INIT] items carregados:',STATE.items.length);
+    catch(e){console.error('[INIT] loadItems falhou:',e);if(!_cached)STATE.items=[];}
 
-    console.log('[INIT] carregando metas...');
     try{await DB.loadBudgets();}
-    catch(e){console.error('[INIT] loadBudgets falhou:',e);STATE.budgets={};}
-    console.log('[INIT] budgets carregados:',Object.keys(STATE.budgets).length);
+    catch(e){console.error('[INIT] loadBudgets falhou:',e);if(!_cached)STATE.budgets={};}
+
+    // Salva no cache local após carregar do Supabase
+    saveLocalCache(user.id);
 
     // Apply theme
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
     document.getElementById('cfg-dark').checked=STATE.profile.dark||false;
     if(STATE.profile.dark){const icon=document.getElementById('dark-icon');icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';}
 
-    // Apply modo before rendering
     applyModo();
-
-    // Show content — sempre alcançado agora que cada DB call tem try/catch próprio
     clearTimeout(_loadingTimeout);
     _hideLoading();
 
     renderAll();
     await checkUpgradeParam();
     if(isBlocked()){showTrialExpired();}
-    else if(STATE._isFirstTime){showOnboarding();}
+    else if(STATE._isFirstTime&&!_cached){showOnboarding();}
   }catch(e){
     console.error('[INIT] erro inesperado:',e);
     clearTimeout(_loadingTimeout);
     _hideLoading();
-    toast('Erro ao carregar — tente recarregar a página');
+    if(!_cached)toast('Erro ao carregar — tente recarregar a página');
   }
 }
 
