@@ -890,17 +890,21 @@ const DB = {
 
   async addItem(item){
     this.setSyncing(true);
+    const{data:{session:_s1}}=await db.auth.getSession();
+    if(_s1?.access_token)STATE.token=_s1.access_token;
     const{desc,...rest}=item;
     const payload={...rest,descricao:desc,user_id:STATE.user.id};
     console.log('[DB.addItem] enviando para Supabase:',JSON.stringify(payload));
-    const{data,error}=await db.from('items').insert(payload).select();
+    const result=await db.from('items').insert(payload).select();
     this.setSyncing(false);
-    console.log('[DB.addItem] resposta — data:',data,'error:',error);
-    if(error)throw error;
+    console.log('[DB.addItem] resposta:',JSON.stringify(result).slice(0,200));
+    if(result.error)throw result.error;
   },
 
   async updateItem(id,data){
     this.setSyncing(true);
+    const{data:{session:_s2}}=await db.auth.getSession();
+    if(_s2?.access_token)STATE.token=_s2.access_token;
     const{desc,...rest}=data;
     const payload=desc!==undefined?{...rest,descricao:desc}:rest;
     const{error}=await db.from('items').update(payload).eq('id',id).eq('user_id',STATE.user.id);
@@ -910,6 +914,8 @@ const DB = {
 
   async deleteItem(id){
     this.setSyncing(true);
+    const{data:{session:_s3}}=await db.auth.getSession();
+    if(_s3?.access_token)STATE.token=_s3.access_token;
     const{error}=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
     this.setSyncing(false);
     if(error)throw error;
