@@ -890,12 +890,13 @@ const DB = {
 
   async addItem(item){
     this.setSyncing(true);
-    const{data:{session:_s1}}=await db.auth.getSession();
-    if(_s1?.access_token)STATE.token=_s1.access_token;
     const{desc,...rest}=item;
     const payload={...rest,descricao:desc,user_id:STATE.user.id};
     console.log('[DB.addItem] enviando para Supabase:',JSON.stringify(payload));
-    const result=await db.from('items').insert(payload).select();
+    const result=await Promise.race([
+      db.from('items').insert(payload).select(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
     this.setSyncing(false);
     console.log('[DB.addItem] resposta:',JSON.stringify(result).slice(0,200));
     if(result.error)throw result.error;
@@ -903,20 +904,22 @@ const DB = {
 
   async updateItem(id,data){
     this.setSyncing(true);
-    const{data:{session:_s2}}=await db.auth.getSession();
-    if(_s2?.access_token)STATE.token=_s2.access_token;
     const{desc,...rest}=data;
     const payload=desc!==undefined?{...rest,descricao:desc}:rest;
-    const{error}=await db.from('items').update(payload).eq('id',id).eq('user_id',STATE.user.id);
+    const{error}=await Promise.race([
+      db.from('items').update(payload).eq('id',id).eq('user_id',STATE.user.id),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
     this.setSyncing(false);
     if(error)throw error;
   },
 
   async deleteItem(id){
     this.setSyncing(true);
-    const{data:{session:_s3}}=await db.auth.getSession();
-    if(_s3?.access_token)STATE.token=_s3.access_token;
-    const{error}=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
+    const{error}=await Promise.race([
+      db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+    ]);
     this.setSyncing(false);
     if(error)throw error;
   },
@@ -1739,6 +1742,7 @@ async function boot(){
   // INITIAL_SESSION é o evento principal de restauração de sessão no reload/reopen
   db.auth.onAuthStateChange(async(event,session)=>{
     console.log('[AUTH] evento:',event,'user:',session?.user?.id);
+    if(session?.access_token)STATE.token=session.access_token;
     if(event==='INITIAL_SESSION'){
       // Sessão válida encontrada no storage → restaura imediatamente
       if(session?.user){_booted=true;await initApp(session.user);}
