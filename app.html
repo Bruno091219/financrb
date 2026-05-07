@@ -895,7 +895,7 @@ const DB = {
     console.log('[DB.addItem] enviando para Supabase:',JSON.stringify(payload));
     const result=await Promise.race([
       db.from('items').insert(payload).select(),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
     ]);
     this.setSyncing(false);
     console.log('[DB.addItem] resposta:',JSON.stringify(result).slice(0,200));
@@ -908,7 +908,7 @@ const DB = {
     const payload=desc!==undefined?{...rest,descricao:desc}:rest;
     const{error}=await Promise.race([
       db.from('items').update(payload).eq('id',id).eq('user_id',STATE.user.id),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
     ]);
     this.setSyncing(false);
     if(error)throw error;
@@ -918,7 +918,7 @@ const DB = {
     this.setSyncing(true);
     const{error}=await Promise.race([
       db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
     ]);
     this.setSyncing(false);
     if(error)throw error;
@@ -1166,29 +1166,37 @@ function updateParcelaPreview(scope){const chk=document.getElementById(scope+'-p
 // ADD ITEMS
 // ═══════════════════════════════════════════
 async function doAdd(desc,val,cat,tipo,date,rec){
-  if(isBlocked()){showTrialExpired();return false;}
-  vibrate();
-  const item={id:Date.now(),desc,val,cat,tipo,date,rec:!!rec};
-  STATE.items.unshift(item);
-  renderAll();
-  try{await DB.addItem(item);saveLocalCache(STATE.user.id);}
-  catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);renderAll();}
-  return true;
+  if(STATE._saving)return false;
+  STATE._saving=true;
+  try{
+    if(isBlocked()){showTrialExpired();return false;}
+    vibrate();
+    const item={id:Date.now(),desc,val,cat,tipo,date,rec:!!rec};
+    STATE.items.unshift(item);
+    renderAll();
+    try{await DB.addItem(item);saveLocalCache(STATE.user.id);}
+    catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);renderAll();}
+    return true;
+  }finally{STATE._saving=false;}
 }
 
 async function doAddParcelas(desc,val,cat,tipo,date,n){
-  vibrate();
-  const perParcela=Math.round(val*100/n)/100;
-  const lastParcela=Math.round((val-perParcela*(n-1))*100)/100;
-  const baseDate=new Date(date+'T12:00:00');
-  const newItems=[];
-  for(let i=0;i<n;i++){
-    const d=new Date(baseDate);d.setMonth(d.getMonth()+i);
-    newItems.push({id:Date.now()+i*1000+Math.floor(Math.random()*1000),desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
-  }
-  STATE.items.unshift(...newItems);renderAll();
-  try{for(const item of newItems)await DB.addItem(item);saveLocalCache(STATE.user.id);toast(`${n} parcelas adicionadas`);}
-  catch(e){toast('Erro ao salvar parcelas');}
+  if(STATE._saving)return;
+  STATE._saving=true;
+  try{
+    vibrate();
+    const perParcela=Math.round(val*100/n)/100;
+    const lastParcela=Math.round((val-perParcela*(n-1))*100)/100;
+    const baseDate=new Date(date+'T12:00:00');
+    const newItems=[];
+    for(let i=0;i<n;i++){
+      const d=new Date(baseDate);d.setMonth(d.getMonth()+i);
+      newItems.push({id:Date.now()+i*1000+Math.floor(Math.random()*1000),desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
+    }
+    STATE.items.unshift(...newItems);renderAll();
+    try{for(const item of newItems)await DB.addItem(item);saveLocalCache(STATE.user.id);toast(`${n} parcelas adicionadas`);}
+    catch(e){toast('Erro ao salvar parcelas');}
+  }finally{STATE._saving=false;}
 }
 
 async function addGasto(){
