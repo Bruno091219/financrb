@@ -352,6 +352,14 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .meta-status{font-size:11px;font-weight:600}
 .meta-edit-row{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .meta-edit-row input{flex:1;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:7px 10px;font-family:var(--f);font-size:13px;font-weight:500;outline:none}
+.bills-carousel{display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bills-carousel::-webkit-scrollbar{display:none}
+.bill-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);min-width:155px;flex-shrink:0}
+.bill-card-name{font-size:13px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.bill-card-val{font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
+.bill-card-pay{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.bill-card-pay.open{display:block}
+.bill-card-pay input{width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:6px 8px;font-family:var(--f);font-size:13px;font-weight:500;outline:none;margin-bottom:8px;box-sizing:border-box}
 .bill-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)}
 .bill-info{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .bill-name{font-size:14px;font-weight:600}
@@ -530,7 +538,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="nav">
     <button class="nav-btn active" onclick="goPage('home',this)">Início</button>
     <button class="nav-btn" onclick="goPage('gastos',this)">Gastos</button>
-    <button class="nav-btn" onclick="goPage('metas',this)">Metas</button>
+    <button class="nav-btn" onclick="goPage('metas',this)">Controle</button>
     <button class="nav-btn" onclick="goPage('renda',this)">Renda</button>
     <button class="nav-btn" onclick="goPage('config',this)">Config</button>
   </div>
@@ -551,6 +559,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
           <div class="hero-sub"><div class="hero-sub-label">Empresa — PJ</div><div class="hero-sub-val pj" id="h-pj">R$ 0,00</div><div class="hero-sub-n" id="h-pj-n">0 gastos</div></div>
         </div>
       </div>
+      <div id="h-bills-carousel"></div>
       <div class="alert-list" id="h-alerts"></div>
       <div id="h-anomalies"></div>
       <div class="prog-block">
@@ -790,7 +799,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 <div class="bnav">
   <button class="bnav-btn active" onclick="goPage('home',null,this)"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
   <button class="bnav-btn" onclick="goPage('gastos',null,this)"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Gastos</button>
-  <button class="bnav-btn" onclick="goPage('metas',null,this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Metas</button>
+  <button class="bnav-btn" onclick="goPage('metas',null,this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Controle</button>
   <button class="bnav-btn" onclick="goPage('renda',null,this)"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Renda</button>
   <button class="bnav-btn" onclick="goPage('config',null,this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
 </div>
@@ -1315,6 +1324,27 @@ async function delItem(id){
 // CONTAS FIXAS
 // ═══════════════════════════════════════════
 function togglePayForm(billId){const f=document.getElementById('pay-form-'+billId);if(f)f.classList.toggle('open');}
+function toggleHomePayForm(billId){const f=document.getElementById('hpf-'+billId);if(f)f.classList.toggle('open');}
+
+async function confirmHomePayBill(billId,monthKey){
+  const val=parseFloat(document.getElementById('hpv-'+billId)?.value);
+  if(!val||val<=0){toast('Informe o valor');return;}
+  const bill=STATE.fixedBills.find(b=>b.id===billId);if(!bill)return;
+  try{
+    const row=await DB.payFixedBill(billId,monthKey,val);
+    STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
+    const dateStr=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');
+    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:'PF',date:dateStr,rec:false};
+    STATE.items.unshift(item);
+    await DB.addItem(item);
+    saveLocalCache(STATE.user.id);
+    const card=document.getElementById('hbc-'+billId);if(card)card.remove();
+    const carousel=document.querySelector('.bills-carousel');
+    if(carousel&&!carousel.children.length)document.getElementById('h-bills-carousel').innerHTML='';
+    toast('Conta paga e lançada!');
+    renderHome();
+  }catch(e){console.error(e);toast('Erro ao registrar pagamento');}
+}
 
 async function confirmPayBill(billId,monthKey){
   const val=parseFloat(document.getElementById('pay-val-'+billId)?.value);
@@ -1682,12 +1712,18 @@ function renderHome(){
   for(const[cat,spent]of Object.entries(catMap)){const budget=STATE.budgets[cat];if(!budget)continue;const p=spent/budget;if(p>=1)alerts.push({cls:'red',msg:`${cat}: orçamento ultrapassado (${fmt(spent)} / ${fmt(budget)})`});else if(p>=.8)alerts.push({cls:'',msg:`${cat}: ${Math.round(p*100)}% do orçamento (${fmt(spent)} / ${fmt(budget)})`});}
   const recToConfirm=getRecToConfirm(monthKey);
   if(recToConfirm.length)alerts.unshift({cls:'green',msg:`${recToConfirm.length} gasto${recToConfirm.length>1?'s':''} recorrente${recToConfirm.length>1?'s':''} a confirmar`,isRec:true,monthKey});
-  const pendingBills=STATE.fixedBills.filter(b=>!STATE.fixedBillsPaid.some(p=>p.billId===b.id&&p.monthKey===monthKey));
-  if(pendingBills.length){const tot=pendingBills.reduce((s,b)=>s+b.valPadrao,0);alerts.push({cls:'',msg:`${pendingBills.length} conta${pendingBills.length>1?'s':''} fixa${pendingBills.length>1?'s':''} pendente${pendingBills.length>1?'s':''} — ${fmt(tot)}`,isBills:true});}
   const alertsEl=document.getElementById('h-alerts');
-  alertsEl.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.cls}" data-rec="${a.isRec||false}" data-month="${a.monthKey||''}" data-bills="${a.isBills||false}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.msg}</div>`).join('');
+  alertsEl.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.cls}" data-rec="${a.isRec||false}" data-month="${a.monthKey||''}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.msg}</div>`).join('');
   alertsEl.querySelectorAll('[data-rec="true"]').forEach(el=>{const m=el.getAttribute('data-month');el.onclick=()=>openRecModal(m);});
-  alertsEl.querySelectorAll('[data-bills="true"]').forEach(el=>{el.onclick=()=>goPage('metas',document.querySelectorAll('.nav-btn')[2]);});
+
+  // carrossel de contas fixas pendentes
+  const pendingBills=STATE.fixedBills.filter(b=>!STATE.fixedBillsPaid.some(p=>p.billId===b.id&&p.monthKey===monthKey));
+  const carouselEl=document.getElementById('h-bills-carousel');
+  if(carouselEl){
+    if(pendingBills.length){
+      carouselEl.innerHTML=`<div class="bills-carousel">${pendingBills.map(b=>`<div class="bill-card" id="hbc-${b.id}"><div class="bill-card-name">${esc(b.desc)}</div><div class="bill-card-val">${fmt(b.valPadrao)}</div><button style="width:100%;background:#0f2d5e;color:#fff;border:none;border-radius:var(--r-xs);padding:7px;font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer" onclick="toggleHomePayForm(${b.id})">Paguei!</button><div class="bill-card-pay" id="hpf-${b.id}"><input type="number" id="hpv-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><div style="display:flex;gap:6px"><button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="confirmHomePayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-ghost" style="font-size:12px;padding:6px" onclick="toggleHomePayForm(${b.id})">✕</button></div></div></div>`).join('')}</div>`;
+    }else{carouselEl.innerHTML='';}
+  }
 
   // anomalies
   const anomalies=getAnomalies(monthKey);
