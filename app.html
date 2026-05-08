@@ -352,6 +352,15 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .meta-status{font-size:11px;font-weight:600}
 .meta-edit-row{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .meta-edit-row input{flex:1;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:7px 10px;font-family:var(--f);font-size:13px;font-weight:500;outline:none}
+.bill-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)}
+.bill-info{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bill-name{font-size:14px;font-weight:600}
+.bill-val{font-size:12px;color:var(--text2);margin-top:2px}
+.bill-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.bill-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--green-l);color:var(--green);border:1px solid var(--green-mu)}
+.pay-form{display:none;gap:8px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.pay-form.open{display:flex}
+.pay-form input{flex:1;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:7px 10px;font-family:var(--f);font-size:13px;font-weight:500;outline:none}
 
 /* ── CONFIG ── */
 .config-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
@@ -603,8 +612,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <!-- METAS -->
   <div class="page" id="page-metas">
     <select class="sel-full" id="metas-month" onchange="renderMetas()"></select>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow);font-size:13px;color:var(--text2);line-height:1.6">Defina orçamentos mensais por categoria e acompanhe em tempo real.</div>
-    <div id="metas-list"></div>
+    <div id="metas-bills-section"></div>
+    <div id="metas-section"></div>
   </div>
 
   <!-- RENDA -->
@@ -826,6 +835,8 @@ let STATE = {
   profile: { name:'', close_day:1, plan:'free', dark:false, modo:'completo' },
   items: [],
   incomes: [],
+  fixedBills: [],
+  fixedBillsPaid: [],
   budgets: {},
   filterVal: 'todos',
   tipoG:'PF', tipoM:'PF', tipoEdit:'PF',
@@ -836,7 +847,7 @@ let STATE = {
 };
 
 function saveLocalCache(uid){
-  try{localStorage.setItem('rb_v1_'+uid,JSON.stringify({items:STATE.items,profile:STATE.profile,budgets:STATE.budgets,incomes:STATE.incomes}));}catch(e){}
+  try{localStorage.setItem('rb_v1_'+uid,JSON.stringify({items:STATE.items,profile:STATE.profile,budgets:STATE.budgets,incomes:STATE.incomes,fixedBills:STATE.fixedBills,fixedBillsPaid:STATE.fixedBillsPaid}));}catch(e){}
 }
 function loadLocalCache(uid){
   try{const r=localStorage.getItem('rb_v1_'+uid);return r?JSON.parse(r):null;}catch(e){return null;}
@@ -910,6 +921,40 @@ const DB = {
     try{
       const{error}=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
       if(error)throw error;
+    }finally{this.setSyncing(false);}
+  },
+
+  async loadFixedBills(){
+    const{data,error}=await db.from('fixed_bills').select('*').eq('user_id',STATE.user.id).order('created_at',{ascending:true});
+    if(error)throw new Error(error.message);
+    STATE.fixedBills=(data||[]).map(r=>({id:r.id,desc:r.descricao,valPadrao:parseFloat(r.val_padrao)}));
+  },
+  async addFixedBill(bill){
+    this.setSyncing(true);
+    try{
+      const result=await db.from('fixed_bills').insert({descricao:bill.desc,val_padrao:bill.valPadrao,user_id:STATE.user.id}).select();
+      if(result.error)throw result.error;
+      return result.data?.[0];
+    }finally{this.setSyncing(false);}
+  },
+  async deleteFixedBill(id){
+    this.setSyncing(true);
+    try{
+      const{error}=await db.from('fixed_bills').delete().eq('id',id).eq('user_id',STATE.user.id);
+      if(error)throw error;
+    }finally{this.setSyncing(false);}
+  },
+  async loadFixedBillsPaid(){
+    const{data,error}=await db.from('fixed_bills_paid').select('*').eq('user_id',STATE.user.id).order('created_at',{ascending:false});
+    if(error)throw new Error(error.message);
+    STATE.fixedBillsPaid=(data||[]).map(r=>({id:r.id,billId:r.bill_id,monthKey:r.month_key,valPago:parseFloat(r.val_pago)}));
+  },
+  async payFixedBill(billId,monthKey,valPago){
+    this.setSyncing(true);
+    try{
+      const result=await db.from('fixed_bills_paid').insert({bill_id:billId,month_key:monthKey,val_pago:valPago,user_id:STATE.user.id}).select();
+      if(result.error)throw result.error;
+      return result.data?.[0];
     }finally{this.setSyncing(false);}
   },
 
@@ -1111,7 +1156,7 @@ async function doLogout(){
   // Limpa explicitamente todas as chaves Supabase do localStorage e o cache local
   try{if(STATE.user?.id)localStorage.removeItem('rb_v1_'+STATE.user.id);}catch(e){}
   try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
-  STATE.user=null;STATE.token=null;STATE.items=[];STATE.incomes=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
+  STATE.user=null;STATE.token=null;STATE.items=[];STATE.incomes=[];STATE.fixedBills=[];STATE.fixedBillsPaid=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
   document.getElementById('onboarding-overlay').style.display='none';
   document.getElementById('home-loading').style.display='';
   document.getElementById('home-content').style.display='none';
@@ -1264,6 +1309,65 @@ async function delItem(id){
   STATE.items=STATE.items.filter(i=>i.id!==id);
   renderAll();toast('Removido');
   try{await DB.deleteItem(id);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao remover');}
+}
+
+// ═══════════════════════════════════════════
+// CONTAS FIXAS
+// ═══════════════════════════════════════════
+function togglePayForm(billId){const f=document.getElementById('pay-form-'+billId);if(f)f.classList.toggle('open');}
+
+async function confirmPayBill(billId,monthKey){
+  const val=parseFloat(document.getElementById('pay-val-'+billId)?.value);
+  if(!val||val<=0){toast('Informe o valor');return;}
+  const bill=STATE.fixedBills.find(b=>b.id===billId);if(!bill)return;
+  try{
+    const row=await DB.payFixedBill(billId,monthKey,val);
+    STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
+    const dateStr=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');
+    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:'PF',date:dateStr,rec:false};
+    STATE.items.unshift(item);
+    await DB.addItem(item);
+    saveLocalCache(STATE.user.id);
+    toast('Conta paga e lançada nos gastos');
+    renderMetas();renderHome();
+  }catch(e){console.error(e);toast('Erro ao registrar pagamento');}
+}
+
+function toggleBillAddForm(){const f=document.getElementById('add-bill-form');if(f){f.style.display=f.style.display==='block'?'none':'block';}}
+
+async function confirmAddFixedBill(){
+  const desc=document.getElementById('new-bill-desc')?.value.trim();
+  const val=parseFloat(document.getElementById('new-bill-val')?.value);
+  if(!desc){toast('Informe a descrição');return;}
+  if(!val||val<=0){toast('Informe o valor');return;}
+  try{
+    const row=await DB.addFixedBill({desc,valPadrao:val});
+    STATE.fixedBills.push({id:row?.id||Date.now(),desc,valPadrao:val});
+    saveLocalCache(STATE.user.id);
+    toast('Conta fixa adicionada');renderMetas();
+  }catch(e){console.error(e);toast('Erro ao salvar');}
+}
+
+async function removeFixedBill(id){
+  try{
+    await DB.deleteFixedBill(id);
+    STATE.fixedBills=STATE.fixedBills.filter(b=>b.id!==id);
+    STATE.fixedBillsPaid=STATE.fixedBillsPaid.filter(p=>p.billId!==id);
+    saveLocalCache(STATE.user.id);
+    renderMetas();toast('Conta removida');
+  }catch(e){console.error(e);toast('Erro ao remover');}
+}
+
+function toggleMetaAddForm(){const f=document.getElementById('add-meta-form');if(f){f.style.display=f.style.display==='block'?'none':'block';}}
+
+async function confirmAddMeta(){
+  const cat=document.getElementById('new-meta-cat')?.value;
+  const val=parseFloat(document.getElementById('new-meta-val')?.value);
+  if(!cat){toast('Selecione uma categoria');return;}
+  if(!val||val<=0){toast('Informe o valor');return;}
+  STATE.budgets[cat]=val;
+  try{await DB.setBudget(cat,val);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao salvar meta');}
+  renderMetas();
 }
 
 // ═══════════════════════════════════════════
@@ -1578,9 +1682,12 @@ function renderHome(){
   for(const[cat,spent]of Object.entries(catMap)){const budget=STATE.budgets[cat];if(!budget)continue;const p=spent/budget;if(p>=1)alerts.push({cls:'red',msg:`${cat}: orçamento ultrapassado (${fmt(spent)} / ${fmt(budget)})`});else if(p>=.8)alerts.push({cls:'',msg:`${cat}: ${Math.round(p*100)}% do orçamento (${fmt(spent)} / ${fmt(budget)})`});}
   const recToConfirm=getRecToConfirm(monthKey);
   if(recToConfirm.length)alerts.unshift({cls:'green',msg:`${recToConfirm.length} gasto${recToConfirm.length>1?'s':''} recorrente${recToConfirm.length>1?'s':''} a confirmar`,isRec:true,monthKey});
+  const pendingBills=STATE.fixedBills.filter(b=>!STATE.fixedBillsPaid.some(p=>p.billId===b.id&&p.monthKey===monthKey));
+  if(pendingBills.length){const tot=pendingBills.reduce((s,b)=>s+b.valPadrao,0);alerts.push({cls:'',msg:`${pendingBills.length} conta${pendingBills.length>1?'s':''} fixa${pendingBills.length>1?'s':''} pendente${pendingBills.length>1?'s':''} — ${fmt(tot)}`,isBills:true});}
   const alertsEl=document.getElementById('h-alerts');
-  alertsEl.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.cls}" data-rec="${a.isRec||false}" data-month="${a.monthKey||''}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.msg}</div>`).join('');
+  alertsEl.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.cls}" data-rec="${a.isRec||false}" data-month="${a.monthKey||''}" data-bills="${a.isBills||false}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.msg}</div>`).join('');
   alertsEl.querySelectorAll('[data-rec="true"]').forEach(el=>{const m=el.getAttribute('data-month');el.onclick=()=>openRecModal(m);});
+  alertsEl.querySelectorAll('[data-bills="true"]').forEach(el=>{el.onclick=()=>goPage('metas',document.querySelectorAll('.nav-btn')[2]);});
 
   // anomalies
   const anomalies=getAnomalies(monthKey);
@@ -1611,12 +1718,39 @@ function renderMetas(){
   buildSelects();
   const monthKey=document.getElementById('metas-month')?.value;if(!monthKey)return;
   const all=byMonth(monthKey);const catMap={};for(const i of all)catMap[i.cat]=(catMap[i.cat]||0)+i.val;
-  document.getElementById('metas-list').innerHTML=ALL_CATS.map(cat=>{
-    const color=CAT_COLOR[cat]||'#6b7280';const bg=catBg(cat);const spent=catMap[cat]||0;const budget=STATE.budgets[cat]||0;const has=budget>0;
-    const pct=has?Math.min(100,Math.round(spent/budget*100)):0;const barColor=pct>=100?'#dc2626':pct>=80?'#d97706':'#0f2d5e';
-    let st='',sc='var(--text3)';if(has){if(pct>=100){st='Ultrapassado';sc='var(--red)';}else if(pct>=80){st=`${100-pct}% restante — atenção`;sc='var(--amber)';}else{st=`${100-pct}% restante`;sc='var(--green)';}}
-    return`<div class="meta-row"><div class="meta-header"><div class="meta-cat"><div class="cat-icon-box" style="background:${bg};color:${color};">${CAT_ICONS[cat]||CAT_ICONS['Outros']}</div><div class="meta-name">${cat}</div></div><div class="meta-vals"><div class="meta-spent">${fmt(spent)}</div><div class="meta-of">${has?'de '+fmt(budget):'sem meta'}</div></div></div>${has?`<div class="meta-bar-bg"><div class="meta-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><div class="meta-status" style="color:${sc}">${st}</div>`:''}<div class="meta-edit-row"><input type="number" id="budget-${cat.replace(/[^a-z]/gi,'_')}" placeholder="Orçamento R$" value="${budget||''}" min="0" step="10"/><button class="btn-sm green" onclick="saveBudget('${cat}')">Salvar</button>${has?`<button class="btn-sm" onclick="removeBudget('${cat}')">Remover</button>`:''}</div></div>`;
-  }).join('');
+
+  // ── Seção 1: Contas fixas ──
+  const billsEl=document.getElementById('metas-bills-section');
+  const monthLabel=mkLabel(monthKey);
+  let bHTML=`<div class="sec-hdr"><span class="sec-title">Contas fixas — ${monthLabel}</span></div>`;
+  if(STATE.fixedBills.length){
+    bHTML+=STATE.fixedBills.map(b=>{
+      const paid=STATE.fixedBillsPaid.find(p=>p.billId===b.id&&p.monthKey===monthKey);
+      const badge=paid?`<span class="bill-badge">Pago ✓ ${fmt(paid.valPago)}</span>`:'';
+      const payBtn=paid?'':`<button class="btn-sm green" onclick="togglePayForm(${b.id})">Pagar</button>`;
+      return`<div class="bill-row" id="bill-row-${b.id}"><div class="bill-info"><div><div class="bill-name">${esc(b.desc)}</div><div class="bill-val">${fmt(b.valPadrao)}</div></div><div class="bill-actions">${badge}${payBtn}<button class="btn-sm" onclick="removeFixedBill(${b.id})">Remover</button></div></div><div class="pay-form" id="pay-form-${b.id}"><input type="number" id="pay-val-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><button class="btn-sm green" onclick="confirmPayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-sm" onclick="togglePayForm(${b.id})">Cancelar</button></div></div>`;
+    }).join('');
+  }else{bHTML+=`<div style="text-align:center;padding:16px 0;color:var(--text3);font-size:13px">Nenhuma conta fixa cadastrada</div>`;}
+  bHTML+=`<div id="add-bill-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)"><div class="field"><label>Descrição</label><input type="text" id="new-bill-desc" placeholder="Ex: Aluguel"/></div><div class="field" style="margin-top:10px"><label>Valor padrão (R$)</label><input type="number" id="new-bill-val" placeholder="0,00" min="0" step="0.01"/></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn-primary" style="flex:1" onclick="confirmAddFixedBill()">Salvar</button><button class="btn-ghost" onclick="toggleBillAddForm()">Cancelar</button></div></div>`;
+  bHTML+=`<button class="btn-ghost" style="width:100%;margin-bottom:20px" onclick="toggleBillAddForm()">+ Adicionar conta fixa</button>`;
+  billsEl.innerHTML=bHTML;
+
+  // ── Seção 2: Metas por categoria ──
+  const metasEl=document.getElementById('metas-section');
+  const catsWithBudget=ALL_CATS.filter(c=>STATE.budgets[c]>0);
+  let mHTML=`<div class="sec-hdr"><span class="sec-title">Metas do mês</span></div>`;
+  if(catsWithBudget.length){
+    mHTML+=catsWithBudget.map(cat=>{
+      const color=CAT_COLOR[cat]||'#6b7280';const bg=catBg(cat);const spent=catMap[cat]||0;const budget=STATE.budgets[cat];
+      const pct=Math.min(100,Math.round(spent/budget*100));const barColor=pct>=100?'#dc2626':pct>=80?'#d97706':'#0f2d5e';
+      let st='',sc='var(--text3)';if(pct>=100){st='Ultrapassado';sc='var(--red)';}else if(pct>=80){st=`${100-pct}% restante — atenção`;sc='var(--amber)';}else{st=`${100-pct}% restante`;sc='var(--green)';}
+      return`<div class="meta-row"><div class="meta-header"><div class="meta-cat"><div class="cat-icon-box" style="background:${bg};color:${color};">${CAT_ICONS[cat]||CAT_ICONS['Outros']}</div><div class="meta-name">${cat}</div></div><div class="meta-vals"><div class="meta-spent">${fmt(spent)}</div><div class="meta-of">de ${fmt(budget)}</div></div></div><div class="meta-bar-bg"><div class="meta-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><div class="meta-status" style="color:${sc}">${st}</div><button class="btn-sm" onclick="removeBudget('${cat}')">Remover</button></div></div>`;
+    }).join('');
+  }else{mHTML+=`<div style="text-align:center;padding:16px 0;color:var(--text3);font-size:13px">Nenhuma meta definida</div>`;}
+  const availCats=ALL_CATS.filter(c=>!STATE.budgets[c]);
+  mHTML+=`<div id="add-meta-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)"><div class="field"><label>Categoria</label><select id="new-meta-cat" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:var(--r-xs);padding:9px 13px;font-family:var(--f);font-size:14px;font-weight:600;appearance:none;cursor:pointer;outline:none">${availCats.map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div><div class="field" style="margin-top:10px"><label>Valor da meta (R$)</label><input type="number" id="new-meta-val" placeholder="0,00" min="0" step="10"/></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn-primary" style="flex:1" onclick="confirmAddMeta()">Salvar</button><button class="btn-ghost" onclick="toggleMetaAddForm()">Cancelar</button></div></div>`;
+  if(availCats.length)mHTML+=`<button class="btn-ghost" style="width:100%" onclick="toggleMetaAddForm()">+ Adicionar meta</button>`;
+  metasEl.innerHTML=mHTML;
 }
 
 // ═══════════════════════════════════════════
@@ -1732,6 +1866,8 @@ async function initApp(user){
     if(_cached.profile)STATE.profile={...STATE.profile,..._cached.profile};
     if(_cached.budgets)STATE.budgets=_cached.budgets;
     if(Array.isArray(_cached.incomes))STATE.incomes=_cached.incomes;
+    if(Array.isArray(_cached.fixedBills))STATE.fixedBills=_cached.fixedBills;
+    if(Array.isArray(_cached.fixedBillsPaid))STATE.fixedBillsPaid=_cached.fixedBillsPaid;
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
     applyModo();
     clearTimeout(_loadingTimeout);
@@ -1749,6 +1885,12 @@ async function initApp(user){
 
     try{await DB.loadIncomes();}
     catch(e){console.error('[INIT] loadIncomes falhou:',e);if(!_cached)STATE.incomes=[];}
+
+    try{await DB.loadFixedBills();}
+    catch(e){console.error('[INIT] loadFixedBills falhou:',e);if(!_cached)STATE.fixedBills=[];}
+
+    try{await DB.loadFixedBillsPaid();}
+    catch(e){console.error('[INIT] loadFixedBillsPaid falhou:',e);if(!_cached)STATE.fixedBillsPaid=[];}
 
     try{await DB.loadBudgets();}
     catch(e){console.error('[INIT] loadBudgets falhou:',e);if(!_cached)STATE.budgets={};}
