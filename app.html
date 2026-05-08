@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="RB Financ"/>
+<meta name="apple-mobile-web-app-title" content="Lapid Financ"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#0f2d5e" id="meta-theme"/>
-<title>RB Financ</title>
+<title>Lapid Financ</title>
 <link rel="manifest" href="/manifest.webmanifest"/>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
 <link rel="apple-touch-icon" href="/icon-192.png"/>
@@ -42,7 +42,6 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
 .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
 .auth-logo{font-size:24px;font-weight:700;letter-spacing:-.8px;text-align:center;margin-bottom:8px}
-.auth-logo-dot{color:var(--green)}
 .auth-tagline{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.5}
 .auth-tabs{display:flex;background:var(--surface2);border-radius:var(--r-sm);padding:3px;margin-bottom:22px;gap:3px}
 .auth-tab{flex:1;padding:9px;font-family:var(--f);font-size:13px;font-weight:600;background:none;border:none;border-radius:8px;cursor:pointer;color:var(--text2);transition:all .18s}
@@ -127,7 +126,6 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .hdr{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;transition:background .2s,border-color .2s}
 [data-theme="dark"] .hdr{background:rgba(15,17,23,.92)}
 .logo{font-size:20px;font-weight:700;letter-spacing:-.8px}
-.logo-dot{color:var(--green)}
 .hdr-left{display:flex;align-items:center;gap:8px}
 .hdr-right{display:flex;gap:8px;align-items:center}
 .hdr-btn{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0}
@@ -438,7 +436,6 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 .onboarding-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
 .onboarding-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg)}
 .onboarding-logo{font-size:22px;font-weight:700;letter-spacing:-.8px;text-align:center;margin-bottom:6px}
-.onboarding-logo-dot{color:var(--green)}
 .onboarding-title{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;text-align:center}
 .onboarding-sub{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:24px;text-align:center}
 .onboarding-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
@@ -471,7 +468,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 <div id="auth-screen" style="display:none">
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="auth-logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><div style="width:3px;height:36px;background:var(--logo-bar);border-radius:2px;flex-shrink:0"></div><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:22px;font-weight:400;letter-spacing:3px;color:var(--logo-rb);line-height:1">RB</span><span style="font-size:8px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
+      <div class="auth-logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><svg width="32" height="29" viewBox="0 0 100 90" fill="none" style="color:var(--logo-rb);flex-shrink:0"><line x1="50" y1="5" x2="20" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="80" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="5" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="95" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="80" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="50" y1="5" x2="50" y2="30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:18px;font-weight:400;letter-spacing:4px;color:var(--logo-rb);line-height:1">LAPID</span><span style="font-size:7px;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
       <div class="auth-tagline">Controle financeiro pessoal e empresarial.<br/>Simples, rápido e seguro.</div>
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="showAuthTab('login')">Entrar</button>
@@ -508,7 +505,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 
   <div class="hdr">
     <div class="hdr-left">
-      <div class="logo" style="display:flex;align-items:center;gap:10px"><div style="width:3px;height:36px;background:var(--logo-bar);border-radius:2px;flex-shrink:0"></div><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:22px;font-weight:400;letter-spacing:3px;color:var(--logo-rb);line-height:1">RB</span><span style="font-size:8px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
+      <div class="logo" style="display:flex;align-items:center;gap:10px"><svg width="32" height="29" viewBox="0 0 100 90" fill="none" style="color:var(--logo-rb);flex-shrink:0"><line x1="50" y1="5" x2="20" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="80" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="5" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="95" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="80" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="50" y1="5" x2="50" y2="30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:18px;font-weight:400;letter-spacing:4px;color:var(--logo-rb);line-height:1">LAPID</span><span style="font-size:7px;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
       <span id="hdr-plan-badge"></span>
     </div>
     <div class="hdr-right">
@@ -675,7 +672,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
         <div id="plan-current-info" style="margin-top:12px;font-size:13px;color:var(--text2);line-height:1.6"></div>
       </div>
     </div>
-    <div style="text-align:center;color:var(--text3);font-size:12px;line-height:1.9;margin-top:4px">Finan.RB v4.0 SaaS · Powered by Supabase<br/>Seus dados são privados e isolados por conta.</div>
+    <div style="text-align:center;color:var(--text3);font-size:12px;line-height:1.9;margin-top:4px">Lapid Financ v4.0 SaaS · Powered by Supabase<br/>Seus dados são privados e isolados por conta.</div>
   </div>
 </div>
 
@@ -731,9 +728,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
 <!-- ONBOARDING -->
 <div class="onboarding-overlay" id="onboarding-overlay" style="display:none">
   <div class="onboarding-card">
-    <div class="onboarding-logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><div style="width:3px;height:36px;background:var(--logo-bar);border-radius:2px;flex-shrink:0"></div><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:22px;font-weight:400;letter-spacing:3px;color:var(--logo-rb);line-height:1">RB</span><span style="font-size:8px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
+    <div class="onboarding-logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><svg width="32" height="29" viewBox="0 0 100 90" fill="none" style="color:var(--logo-rb);flex-shrink:0"><line x1="50" y1="5" x2="20" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="80" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="5" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="95" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="80" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="50" y1="5" x2="50" y2="30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:18px;font-weight:400;letter-spacing:4px;color:var(--logo-rb);line-height:1">LAPID</span><span style="font-size:7px;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
     <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:24px">Bem-vindo! Vamos configurar seu app.</div>
-    <div class="onboarding-title">Como quer usar o Finan.RB?</div>
+    <div class="onboarding-title">Como quer usar o Lapid Financ?</div>
     <div class="onboarding-sub">Isso define a interface. Você pode mudar depois em Configurações.</div>
     <div class="onboarding-opts">
       <button class="onboarding-opt" id="ob-opt-pessoal" onclick="selectOnboardingMode('pessoal')">
@@ -760,7 +757,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="trial-expired-card">
     <div class="trial-expired-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
     <div class="trial-expired-title">Seu trial acabou</div>
-    <p class="trial-expired-sub">Seus 15 dias gratuitos expiraram. Assine o plano Pro para continuar usando o Finan.RB.</p>
+    <p class="trial-expired-sub">Seus 15 dias gratuitos expiraram. Assine o plano Pro para continuar usando o Lapid Financ.</p>
     <div class="trial-price-box">
       <div class="trial-price-row"><span class="trial-price-label">Primeiro mês</span><span class="trial-price-val highlight">R$ 10,00</span></div>
       <div class="trial-price-row"><span class="trial-price-label">A partir do 2º mês</span><span class="trial-price-val">R$ 19,00/mês</span></div>
@@ -1617,7 +1614,7 @@ function exportPDF(){
     const totPF=all.filter(i=>i.tipo==='PF').reduce((s,i)=>s+i.val,0);const totPJ=all.filter(i=>i.tipo==='PJ').reduce((s,i)=>s+i.val,0);
     const catMap={};for(const i of all)catMap[i.cat]=(catMap[i.cat]||0)+i.val;
     doc.setFillColor(26,138,74);doc.rect(0,0,210,28,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Finan.RB',14,13);
+    doc.setTextColor(255,255,255);doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Lapid Financ',14,13);
     doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(`Relatório — ${mkLabel(monthKey)}`,14,21);doc.text(STATE.profile.name||STATE.user?.email||'',196,13,{align:'right'});
     doc.setTextColor(30,30,30);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text('Resumo',14,38);
     doc.setFillColor(245,246,242);doc.rect(14,42,182,24,'F');
@@ -1629,7 +1626,7 @@ function exportPDF(){
     doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(107,114,128);doc.text('DATA',14,y);doc.text('DESCRIÇÃO',36,y);doc.text('CATEGORIA',115,y);doc.text('TIPO',158,y);doc.text('VALOR',196,y,{align:'right'});y+=2;doc.setFillColor(230,232,228);doc.rect(14,y,182,.5,'F');y+=4;
     doc.setTextColor(30,30,30);
     all.sort((a,b)=>b.date.localeCompare(a.date)).forEach(item=>{if(y>270){doc.addPage();y=20;}doc.setFont('helvetica','normal');doc.setFontSize(8);doc.text(fmtDate(item.date),14,y);doc.text(item.desc.substring(0,34),36,y);doc.text(item.cat,115,y);doc.setTextColor(item.tipo==='PF'?[26,138,74]:[37,99,235]);doc.text(item.tipo,158,y);doc.setTextColor(30,30,30);doc.text(fmt(item.val),196,y,{align:'right'});y+=6;});
-    doc.setFontSize(8);doc.setTextColor(180,180,180);doc.text('Finan.RB · '+new Date().toLocaleDateString('pt-BR'),105,288,{align:'center'});
+    doc.setFontSize(8);doc.setTextColor(180,180,180);doc.text('Lapid Financ · '+new Date().toLocaleDateString('pt-BR'),105,288,{align:'center'});
     doc.save(`finan-rb-${monthKey}.pdf`);toast('PDF gerado!');
   }catch(e){console.error(e);toast('Erro ao gerar PDF');}
 }
@@ -1841,7 +1838,7 @@ function renderPlanos(){
     if(planInfoEl)planInfoEl.innerHTML=`<strong>Trial ativo — ${d} dia${d!==1?'s':''} restante${d!==1?'s':''}</strong><br/>Você tem acesso a todos os recursos gratuitamente. Assine antes do trial expirar e pague apenas R$ 10 no primeiro mês.`;
   }else{
     if(upgradeBtn)upgradeBtn.style.display='';
-    if(planInfoEl)planInfoEl.innerHTML='<strong style="color:var(--red)">Trial expirado</strong><br/>Assine o plano Pro para continuar usando o Finan.RB. Primeiro mês por R$ 10,00.';
+    if(planInfoEl)planInfoEl.innerHTML='<strong style="color:var(--red)">Trial expirado</strong><br/>Assine o plano Pro para continuar usando o Lapid Financ. Primeiro mês por R$ 10,00.';
   }
 }
 
@@ -1961,7 +1958,7 @@ async function initApp(user){
 async function boot(){
   console.log('[BOOT] iniciando...');
   if(CONFIG.STRIPE_PAYMENT_LINK.includes('SEU_LINK')||CONFIG.STRIPE_PORTAL_URL.includes('SEU_PORTAL')){
-    console.warn('[Finan.RB] ATENÇÃO: Configure STRIPE_PAYMENT_LINK e STRIPE_PORTAL_URL no CONFIG antes de publicar.');
+    console.warn('[Lapid Financ] ATENÇÃO: Configure STRIPE_PAYMENT_LINK e STRIPE_PORTAL_URL no CONFIG antes de publicar.');
   }
 
   // Check for ?reset=true (password reset redirect)
