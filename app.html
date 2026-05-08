@@ -522,7 +522,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
     <button class="nav-btn active" onclick="goPage('home',this)">Início</button>
     <button class="nav-btn" onclick="goPage('gastos',this)">Gastos</button>
     <button class="nav-btn" onclick="goPage('metas',this)">Metas</button>
-    <button class="nav-btn" onclick="goPage('planos',this)">Planos</button>
+    <button class="nav-btn" onclick="goPage('renda',this)">Renda</button>
     <button class="nav-btn" onclick="goPage('config',this)">Config</button>
   </div>
 
@@ -530,7 +530,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <div class="page active" id="page-home">
     <div id="home-loading"><div class="skeleton skeleton-hero"></div><div class="skeleton skeleton-item"></div><div class="skeleton skeleton-item"></div></div>
     <div id="home-content" style="display:none">
-      <select class="sel-full" id="home-month" onchange="renderHome()"></select>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><select class="sel-full" id="home-month" onchange="renderHome()" style="margin-bottom:0;flex:1"></select><span id="h-saldo" style="font-size:12px;font-weight:700;white-space:nowrap"></span></div>
       <div id="h-usage"></div>
       <div class="hero">
         <div class="hero-label">Total do mês</div>
@@ -551,11 +551,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
         <div class="prog-bg" style="margin-bottom:0"><div class="prog-fill" id="h-bar-pj" style="background:var(--blue);width:0%"></div></div>
       </div>
       <div id="h-biggest"></div>
-      <div id="h-quick"></div>
       <div class="sec-hdr"><span class="sec-title">Evolução mensal</span></div>
       <div class="chart-card"><div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>PF</div><div class="legend-item chart-pj-legend"><div class="legend-dot" style="background:var(--blue)"></div>PJ</div></div><div class="chart-wrap"><canvas id="evo-chart">Gráfico de evolução.</canvas></div></div>
-      <div class="sec-hdr"><span class="sec-title">Top categorias</span></div>
-      <div class="cat-block" id="h-top-cats"></div>
       <div class="sec-hdr"><span class="sec-title">Últimos gastos</span><span class="sec-link" onclick="goPage('gastos',document.querySelectorAll('.nav-btn')[1])">Ver todos</span></div>
       <div id="h-recent"></div>
     </div>
@@ -610,34 +607,21 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
     <div id="metas-list"></div>
   </div>
 
-  <!-- PLANOS -->
-  <div class="page" id="page-planos">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px">Planos</div>
-      <div style="font-size:14px;color:var(--text2)">Simples e transparente</div>
+  <!-- RENDA -->
+  <div class="page" id="page-renda">
+    <div id="renda-total" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow);text-align:center"><div style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Total de rendas</div><div id="renda-total-val" style="font-size:28px;font-weight:700;color:var(--green)">R$ 0,00</div></div>
+    <div class="config-block" style="margin-bottom:16px">
+      <div style="padding:14px 16px">
+        <div class="field"><label>Descrição</label><input type="text" id="renda-desc" placeholder="Ex: Salário Bruno"/></div>
+        <div class="field" style="margin-top:10px"><label>Valor mensal (R$)</label><input type="number" id="renda-val" placeholder="0,00" min="0" step="0.01"/></div>
+        <button class="btn-primary" style="width:100%;margin-top:12px" onclick="addRenda()">Adicionar renda</button>
+      </div>
     </div>
-    <div class="pricing-card popular" style="margin-bottom:12px">
-      <div class="popular-label">⭐ Único plano</div>
-      <div class="pricing-plan-name" style="margin-top:8px">Pro</div>
-      <div class="pricing-price">R$ 10<span>/1º mês</span></div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Depois R$ 19/mês · Cancele quando quiser</div>
-      <ul class="pricing-features">
-        <li>15 dias grátis para testar tudo</li>
-        <li>Gastos ilimitados</li>
-        <li class="feat-pj">PF + PJ separados</li>
-        <li>Gráficos avançados e anomalias</li>
-        <li>OCR de comprovantes (foto)</li>
-        <li>Entrada por voz</li>
-        <li>Relatório PDF mensal</li>
-        <li>Exportação CSV</li>
-      </ul>
-    </div>
-    <button class="btn-upgrade" id="upgrade-btn" onclick="openUpgrade()">Assinar Pro — R$ 10 no 1º mês</button>
-    <div style="text-align:center;margin-top:12px">
-      <span style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600" onclick="openPortal()">Gerenciar assinatura</span>
-    </div>
-    <div id="plan-current-info" style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.6;box-shadow:var(--shadow)"></div>
+    <div id="renda-list"></div>
   </div>
+
+  <!-- PLANOS (oculto, mantido para compatibilidade) -->
+  <div class="page" id="page-planos" style="display:none!important"></div>
 
   <!-- CONFIG -->
   <div class="page" id="page-config">
@@ -662,6 +646,16 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
       <div class="config-row"><div><div class="config-label">Total de registros</div><div class="config-desc" id="cfg-count">—</div></div></div>
       <div class="config-row"><div><div class="config-label">Sair da conta</div></div><button class="btn-ghost" onclick="doLogout()">Sair</button></div>
       <div class="config-row"><div><div class="config-label">Apagar todos os dados</div><div class="config-desc">Ação irreversível</div></div><button class="btn-danger" onclick="clearAll()">Apagar</button></div>
+    </div>
+    <div class="sec-title" style="margin-bottom:10px">Plano e assinatura</div>
+    <div class="config-block" style="margin-bottom:16px">
+      <div style="padding:14px 16px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px">Pro — R$ 10 no 1º mês</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Depois R$ 19/mês · Cancele quando quiser</div>
+        <button class="btn-upgrade" id="upgrade-btn" onclick="openUpgrade()" style="width:100%">Assinar Pro — R$ 10 no 1º mês</button>
+        <div style="text-align:center;margin-top:10px"><span style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600" onclick="openPortal()">Gerenciar assinatura</span></div>
+        <div id="plan-current-info" style="margin-top:12px;font-size:13px;color:var(--text2);line-height:1.6"></div>
+      </div>
     </div>
     <div style="text-align:center;color:var(--text3);font-size:12px;line-height:1.9;margin-top:4px">Finan.RB v4.0 SaaS · Powered by Supabase<br/>Seus dados são privados e isolados por conta.</div>
   </div>
@@ -788,7 +782,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px)}
   <button class="bnav-btn active" onclick="goPage('home',null,this)"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
   <button class="bnav-btn" onclick="goPage('gastos',null,this)"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Gastos</button>
   <button class="bnav-btn" onclick="goPage('metas',null,this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Metas</button>
-  <button class="bnav-btn" onclick="goPage('planos',null,this)"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Planos</button>
+  <button class="bnav-btn" onclick="goPage('renda',null,this)"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Renda</button>
   <button class="bnav-btn" onclick="goPage('config',null,this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
 </div>
 
@@ -831,6 +825,7 @@ let STATE = {
   token: null,
   profile: { name:'', close_day:1, plan:'free', dark:false, modo:'completo' },
   items: [],
+  incomes: [],
   budgets: {},
   filterVal: 'todos',
   tipoG:'PF', tipoM:'PF', tipoEdit:'PF',
@@ -841,7 +836,7 @@ let STATE = {
 };
 
 function saveLocalCache(uid){
-  try{localStorage.setItem('rb_v1_'+uid,JSON.stringify({items:STATE.items,profile:STATE.profile,budgets:STATE.budgets}));}catch(e){}
+  try{localStorage.setItem('rb_v1_'+uid,JSON.stringify({items:STATE.items,profile:STATE.profile,budgets:STATE.budgets,incomes:STATE.incomes}));}catch(e){}
 }
 function loadLocalCache(uid){
   try{const r=localStorage.getItem('rb_v1_'+uid);return r?JSON.parse(r):null;}catch(e){return null;}
@@ -914,6 +909,29 @@ const DB = {
     this.setSyncing(true);
     try{
       const{error}=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
+      if(error)throw error;
+    }finally{this.setSyncing(false);}
+  },
+
+  async loadIncomes(){
+    const{data,error}=await db.from('incomes').select('*').eq('user_id',STATE.user.id).order('created_at',{ascending:false});
+    if(error)throw new Error(error.message);
+    STATE.incomes=(data||[]).map(r=>({id:r.id,desc:r.descricao,val:parseFloat(r.val)}));
+  },
+
+  async addIncome(income){
+    this.setSyncing(true);
+    try{
+      const result=await db.from('incomes').insert({descricao:income.desc,val:income.val,user_id:STATE.user.id}).select();
+      if(result.error)throw result.error;
+      return result.data?.[0];
+    }finally{this.setSyncing(false);}
+  },
+
+  async deleteIncome(id){
+    this.setSyncing(true);
+    try{
+      const{error}=await db.from('incomes').delete().eq('id',id).eq('user_id',STATE.user.id);
       if(error)throw error;
     }finally{this.setSyncing(false);}
   },
@@ -1093,7 +1111,7 @@ async function doLogout(){
   // Limpa explicitamente todas as chaves Supabase do localStorage e o cache local
   try{if(STATE.user?.id)localStorage.removeItem('rb_v1_'+STATE.user.id);}catch(e){}
   try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
-  STATE.user=null;STATE.token=null;STATE.items=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
+  STATE.user=null;STATE.token=null;STATE.items=[];STATE.incomes=[];STATE.budgets={};STATE.profile={name:'',close_day:1,plan:'free',dark:false,modo:'completo'};STATE._isFirstTime=false;
   document.getElementById('onboarding-overlay').style.display='none';
   document.getElementById('home-loading').style.display='';
   document.getElementById('home-content').style.display='none';
@@ -1313,10 +1331,10 @@ function goPage(id,navEl,bnav){
   document.getElementById('page-'+id).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
-  const map={home:0,gastos:1,metas:2,planos:3,config:4};const i=map[id];
+  const map={home:0,gastos:1,metas:2,renda:3,config:4};const i=map[id];
   if(navEl)navEl.classList.add('active');else if(i!==undefined)document.querySelectorAll('.nav-btn')[i]?.classList.add('active');
   if(bnav)bnav.classList.add('active');else if(i!==undefined)document.querySelectorAll('.bnav-btn')[i]?.classList.add('active');
-  if(id==='home')renderHome();else if(id==='metas')renderMetas();else if(id==='gastos')renderGastos();else if(id==='planos')renderPlanos();else if(id==='config')renderConfig();
+  if(id==='home')renderHome();else if(id==='metas')renderMetas();else if(id==='gastos')renderGastos();else if(id==='renda')renderRenda();else if(id==='config'){renderConfig();renderPlanos();}
 }
 function openModal(id){document.getElementById(id).classList.add('open');setTimeout(()=>{const inp=document.querySelector('#'+id+' input[type=text]');if(inp)inp.focus();},150);}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -1570,16 +1588,11 @@ function renderHome(){
   if(anomalies.length){anomEl.innerHTML=`<div class="anomaly-card"><div class="anomaly-title"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Gastos acima da média</div>${anomalies.map(a=>`<div class="anomaly-item">↑ ${a.cat}: ${fmt(a.curr)} — ${a.pct}% acima da média (${fmt(a.avg)})</div>`).join('')}</div>`;}
   else anomEl.innerHTML='';
 
-  // quick actions
-  const quickItems=getQuickItems();
-  const quickEl=document.getElementById('h-quick');
-  if(quickItems.length){quickEl.innerHTML=`<div class="quick-section"><div class="quick-title">Atalhos rápidos</div><div class="quick-list">${quickItems.map(item=>{const color=CAT_COLOR[item.cat]||'#6b7280';return`<button class="quick-btn" data-desc="${esc(item.desc)}" onclick="quickAdd(this.dataset.desc,${item.val},'${item.cat}','${item.tipo}')"><div class="quick-desc">${esc(item.desc)}</div><div class="quick-val" style="color:${color}">${fmt(item.val)}</div><div class="quick-meta">${esc(item.cat)}<span class="tipo-tag"> · ${esc(item.tipo)}</span></div></button>`;}).join('')}</div></div>`;}
-  else quickEl.innerHTML='';
-
-  // top cats
-  const prevCatMap={};for(const i of prev)prevCatMap[i.cat]=(prevCatMap[i.cat]||0)+i.val;
-  const catList=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);const maxCat=catList[0]?catList[0][1]:0;
-  document.getElementById('h-top-cats').innerHTML=catList.length?catList.map(([cat,val])=>{const color=CAT_COLOR[cat]||'#6b7280';const bg=catBg(cat);const pct=maxCat?Math.round(val/maxCat*100):0;const prevVal=prevCatMap[cat]||0;let delta='';if(prevVal>0){const d=val-prevVal;const p=Math.round(Math.abs(d)/prevVal*100);delta=`<div class="cat-delta ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${p}% vs mês ant.</div>`;}return`<div class="cat-row"><div class="cat-icon-box" style="background:${bg};color:${color};">${CAT_ICONS[cat]||CAT_ICONS['Outros']}</div><div class="cat-info"><div class="cat-name">${cat}</div><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div></div></div><div class="cat-right"><div class="cat-val">${fmt(val)}</div>${delta}</div></div>`;}).join(''):'<div class="cat-row"><span style="font-size:13px;color:var(--text2)">Sem gastos este mês</span></div>';
+  // saldo do mês
+  const totalRenda=STATE.incomes.reduce((s,i)=>s+i.val,0);
+  const saldo=totalRenda-total;
+  const saldoEl=document.getElementById('h-saldo');
+  if(saldoEl){saldoEl.textContent=totalRenda>0?'Saldo: '+fmt(Math.abs(saldo)):'';saldoEl.style.color=saldo>=0?'var(--green)':'var(--red)';}
 
   const recent=all.slice(0,4);
   document.getElementById('h-recent').innerHTML=recent.length?recent.map(i=>itemHTML(i)).join(''):`<div class="empty"><div class="empty-circle"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg></div><div class="empty-title">Nenhum gasto ainda</div><div class="empty-desc">Use o + para adicionar o primeiro gasto</div></div>`;
@@ -1604,6 +1617,43 @@ function renderMetas(){
     let st='',sc='var(--text3)';if(has){if(pct>=100){st='Ultrapassado';sc='var(--red)';}else if(pct>=80){st=`${100-pct}% restante — atenção`;sc='var(--amber)';}else{st=`${100-pct}% restante`;sc='var(--green)';}}
     return`<div class="meta-row"><div class="meta-header"><div class="meta-cat"><div class="cat-icon-box" style="background:${bg};color:${color};">${CAT_ICONS[cat]||CAT_ICONS['Outros']}</div><div class="meta-name">${cat}</div></div><div class="meta-vals"><div class="meta-spent">${fmt(spent)}</div><div class="meta-of">${has?'de '+fmt(budget):'sem meta'}</div></div></div>${has?`<div class="meta-bar-bg"><div class="meta-bar-fill" style="width:${pct}%;background:${barColor}"></div></div><div class="meta-status" style="color:${sc}">${st}</div>`:''}<div class="meta-edit-row"><input type="number" id="budget-${cat.replace(/[^a-z]/gi,'_')}" placeholder="Orçamento R$" value="${budget||''}" min="0" step="10"/><button class="btn-sm green" onclick="saveBudget('${cat}')">Salvar</button>${has?`<button class="btn-sm" onclick="removeBudget('${cat}')">Remover</button>`:''}</div></div>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════
+// RENDER RENDA
+// ═══════════════════════════════════════════
+function renderRenda(){
+  const total=STATE.incomes.reduce((s,i)=>s+i.val,0);
+  const tv=document.getElementById('renda-total-val');if(tv)tv.textContent=fmt(total);
+  const listEl=document.getElementById('renda-list');if(!listEl)return;
+  if(!STATE.incomes.length){listEl.innerHTML=`<div class="empty"><div class="empty-circle"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="empty-title">Nenhuma renda cadastrada</div><div class="empty-desc">Adicione suas fontes de renda acima</div></div>`;return;}
+  listEl.innerHTML=STATE.incomes.map(i=>`<div class="config-block" style="margin-bottom:8px"><div class="config-row"><div><div class="config-label">${esc(i.desc)}</div></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:14px;font-weight:700;color:var(--green)">${fmt(i.val)}</span><button class="btn-sm" onclick="deleteRenda(${i.id})">Remover</button></div></div></div>`).join('');
+}
+
+async function addRenda(){
+  const desc=document.getElementById('renda-desc').value.trim();
+  const val=parseFloat(document.getElementById('renda-val').value);
+  if(!desc){toast('Informe a descrição');return;}
+  if(!val||val<=0){toast('Informe um valor válido');return;}
+  const income={desc,val};
+  try{
+    const row=await DB.addIncome(income);
+    STATE.incomes.unshift({id:row?.id||Date.now(),desc,val});
+    saveLocalCache(STATE.user.id);
+    renderRenda();renderHome();
+    document.getElementById('renda-desc').value='';document.getElementById('renda-val').value='';
+    toast('Renda adicionada');
+  }catch(e){console.error(e);toast('Erro ao salvar renda');}
+}
+
+async function deleteRenda(id){
+  try{
+    await DB.deleteIncome(id);
+    STATE.incomes=STATE.incomes.filter(i=>i.id!==id);
+    saveLocalCache(STATE.user.id);
+    renderRenda();renderHome();
+    toast('Renda removida');
+  }catch(e){console.error(e);toast('Erro ao remover renda');}
 }
 
 // ═══════════════════════════════════════════
@@ -1651,7 +1701,7 @@ function renderConfig(){
 // ═══════════════════════════════════════════
 // RENDER ALL
 // ═══════════════════════════════════════════
-function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();renderPlanos();renderConfig();renderPlanBadge();}
+function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();renderRenda();renderPlanos();renderConfig();renderPlanBadge();}
 
 // ═══════════════════════════════════════════
 // INIT APP (after auth)
@@ -1681,6 +1731,7 @@ async function initApp(user){
     if(Array.isArray(_cached.items)&&_cached.items.length>0)STATE.items=_cached.items;
     if(_cached.profile)STATE.profile={...STATE.profile,..._cached.profile};
     if(_cached.budgets)STATE.budgets=_cached.budgets;
+    if(Array.isArray(_cached.incomes))STATE.incomes=_cached.incomes;
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
     applyModo();
     clearTimeout(_loadingTimeout);
@@ -1695,6 +1746,9 @@ async function initApp(user){
 
     try{await DB.loadItems();}
     catch(e){console.error('[INIT] loadItems falhou:',e);if(!_cached)STATE.items=[];}
+
+    try{await DB.loadIncomes();}
+    catch(e){console.error('[INIT] loadIncomes falhou:',e);if(!_cached)STATE.incomes=[];}
 
     try{await DB.loadBudgets();}
     catch(e){console.error('[INIT] loadBudgets falhou:',e);if(!_cached)STATE.budgets={};}
