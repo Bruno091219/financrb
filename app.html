@@ -890,7 +890,7 @@ const DB = {
 
   async addItem(item){
     this.setSyncing(true);
-    const{desc,id,...rest}=item;
+    const{desc,...rest}=item;
     const payload={...rest,descricao:desc,user_id:STATE.user.id};
     console.log('[DB.addItem] enviando:',JSON.stringify(payload));
     try{
