@@ -1,5 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#1a8a4a"/>
-  <text x="16" y="23" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">F</text>
-  <circle cx="23" cy="22" r="3" fill="#22c98a"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 90" fill="none">
+  <line x1="50" y1="2"  x2="85" y2="30" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="50" y1="2"  x2="15" y2="30" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="85" y1="30" x2="98" y2="50" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="15" y1="30" x2="2"  y2="50" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="98" y1="50" x2="50" y2="88" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="2"  y1="50" x2="50" y2="88" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="15" y1="30" x2="85" y2="30" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="2"  y1="50" x2="98" y2="50" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="15" y1="30" x2="50" y2="88" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="85" y1="30" x2="50" y2="88" stroke="#0f2d5e" stroke-width="5" stroke-linecap="round"/>
 </svg>
