@@ -1214,7 +1214,7 @@ function catBg(cat){return isDark()?(CAT_BGD[cat]||'rgba(156,163,175,.12)'):(CAT
 // ═══════════════════════════════════════════
 // MONTHS
 // ═══════════════════════════════════════════
-function getMonths(){const cur=new Date().toISOString().substring(0,7);const keys=[...new Set(STATE.items.map(i=>mk(i.date)))].sort().reverse();if(!keys.includes(cur))keys.unshift(cur);return keys;}
+function getMonths(){const recent=[];const d=new Date();for(let i=0;i<6;i++){recent.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);d.setMonth(d.getMonth()-1);}const fromItems=STATE.items.map(i=>mk(i.date));return[...new Set([...recent,...fromItems])].sort().reverse();}
 function buildSelects(){const months=getMonths();const cur=new Date().toISOString().substring(0,7);['home-month','metas-month'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const prev=sel.value||cur;const opts=months.includes(prev)?months:[prev,...months];sel.innerHTML=opts.map(k=>`<option value="${k}"${k===prev?' selected':''}>${mkLabel(k)}</option>`).join('');});}
 function byMonth(k){return STATE.items.filter(i=>mk(i.date)===k);}
 
