@@ -862,7 +862,7 @@ let STATE = {
   fixedBillsPaid: [],
   budgets: {},
   filterVal: 'todos',
-  tipoG:'PF', tipoM:'PF', tipoEdit:'PF', tipoBill:'PF',
+  tipoG:'PF', tipoM:'PF', tipoEdit:'PF', tipoBill:'PF', tipoBillEdit:'PF',
   evoChart: null,
   recognition: null,
   syncing: false,
@@ -956,9 +956,21 @@ const DB = {
   async addFixedBill(bill){
     this.setSyncing(true);
     try{
-      const result=await db.from('fixed_bills').insert({descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF',user_id:STATE.user.id}).select();
+      const payload={descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF',user_id:STATE.user.id};
+      console.log('[DB.addFixedBill] payload:',JSON.stringify(payload));
+      const result=await db.from('fixed_bills').insert(payload).select();
+      console.log('[DB.addFixedBill] resposta:',JSON.stringify(result).slice(0,300));
       if(result.error)throw result.error;
       return result.data?.[0];
+    }finally{this.setSyncing(false);}
+  },
+  async updateFixedBill(id,bill){
+    this.setSyncing(true);
+    try{
+      const payload={descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF'};
+      console.log('[DB.updateFixedBill] id:',id,'payload:',JSON.stringify(payload));
+      const{error}=await db.from('fixed_bills').update(payload).eq('id',id).eq('user_id',STATE.user.id);
+      if(error)throw error;
     }finally{this.setSyncing(false);}
   },
   async deleteFixedBill(id){
@@ -1411,6 +1423,49 @@ async function removeFixedBill(id){
   }catch(e){console.error(e);toast('Erro ao remover');}
 }
 
+function setBillEditTipo(t,id){
+  STATE.tipoBillEdit=t;
+  const f=document.getElementById('bill-edit-'+id);if(!f)return;
+  const tog=f.querySelector('.bill-edit-toggle');if(!tog)return;
+  tog.children[0].className='tipo-btn'+(t==='PF'?' act-pf':'');
+  tog.children[1].className='tipo-btn'+(t==='PJ'?' act-pj':'');
+}
+
+function openEditBill(id){
+  document.querySelectorAll('.bill-edit-form').forEach(f=>f.style.display='none');
+  const bill=STATE.fixedBills.find(b=>b.id===id);if(!bill)return;
+  STATE.tipoBillEdit=bill.tipo||'PF';
+  const f=document.getElementById('bill-edit-'+id);if(!f)return;
+  f.querySelector('.bill-edit-desc').value=bill.desc;
+  f.querySelector('.bill-edit-val').value=bill.valPadrao;
+  f.querySelector('.bill-edit-dia').value=bill.diaVenc||'';
+  const tog=f.querySelector('.bill-edit-toggle');
+  if(tog){tog.children[0].className='tipo-btn'+(STATE.tipoBillEdit==='PF'?' act-pf':'');tog.children[1].className='tipo-btn'+(STATE.tipoBillEdit==='PJ'?' act-pj':'');}
+  f.style.display='block';
+}
+
+function cancelEditBill(id){const f=document.getElementById('bill-edit-'+id);if(f)f.style.display='none';}
+
+async function saveEditBill(id){
+  const f=document.getElementById('bill-edit-'+id);if(!f)return;
+  const desc=f.querySelector('.bill-edit-desc').value.trim();
+  const val=parseFloat(f.querySelector('.bill-edit-val').value);
+  const diaRaw=f.querySelector('.bill-edit-dia').value;
+  const diaVenc=diaRaw?parseInt(diaRaw,10):null;
+  const tipo=STATE.tipoBillEdit||'PF';
+  if(!desc){toast('Informe a descrição');return;}
+  if(!val||val<=0){toast('Informe um valor válido');return;}
+  if(diaVenc&&(diaVenc<1||diaVenc>31)){toast('Dia inválido (1–31)');return;}
+  try{
+    await DB.updateFixedBill(id,{desc,valPadrao:val,diaVenc,tipo});
+    const idx=STATE.fixedBills.findIndex(b=>b.id===id);
+    if(idx!==-1)STATE.fixedBills[idx]={...STATE.fixedBills[idx],desc,valPadrao:val,diaVenc,tipo};
+    STATE.fixedBills.sort((a,b)=>{if(a.diaVenc&&b.diaVenc)return a.diaVenc-b.diaVenc;if(a.diaVenc)return -1;if(b.diaVenc)return 1;return 0;});
+    saveLocalCache(STATE.user.id);
+    toast('Conta atualizada');renderMetas();
+  }catch(e){console.error(e);toast('Erro ao salvar');}
+}
+
 function toggleMetaAddForm(){const f=document.getElementById('add-meta-form');if(f){f.style.display=f.style.display==='block'?'none':'block';}}
 
 async function confirmAddMeta(){
@@ -1795,7 +1850,8 @@ function renderMetas(){
       const payBtn=paid?'':`<button class="btn-sm green" onclick="togglePayForm(${b.id})">Pagar</button>`;
       const tipoBadge=`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;${b.tipo==='PJ'?'background:var(--blue-l);color:var(--blue);border:1px solid rgba(37,99,235,.3)':'background:var(--green-l);color:var(--green);border:1px solid var(--green-mu)'}">${b.tipo}</span>`;
       const vencInfo=b.diaVenc?`<span style="font-size:11px;color:var(--text3)"> · Vence dia ${b.diaVenc}</span>`:'';
-      return`<div class="bill-row" id="bill-row-${b.id}"><div class="bill-info"><div><div class="bill-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${esc(b.desc)}${tipoBadge}</div><div class="bill-val">${fmt(b.valPadrao)}${vencInfo}</div></div><div class="bill-actions">${badge}${payBtn}<button class="btn-sm" onclick="removeFixedBill(${b.id})">Remover</button></div></div><div class="pay-form" id="pay-form-${b.id}"><input type="number" id="pay-val-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><button class="btn-sm green" onclick="confirmPayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-sm" onclick="togglePayForm(${b.id})">Cancelar</button></div></div>`;
+      const editForm=`<div class="bill-edit-form" id="bill-edit-${b.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div class="tipo-toggle bill-edit-toggle"><button class="tipo-btn${b.tipo==='PF'?' act-pf':''}" onclick="setBillEditTipo('PF',${b.id})">Pessoal — PF</button><button class="tipo-btn${b.tipo==='PJ'?' act-pj':''}" onclick="setBillEditTipo('PJ',${b.id})">Empresa — PJ</button></div><div class="field"><label>Descrição</label><input class="bill-edit-desc" type="text" value="${esc(b.desc)}"/></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="field"><label>Valor (R$)</label><input class="bill-edit-val" type="number" value="${b.valPadrao}" min="0" step="0.01"/></div><div class="field"><label>Vence todo dia</label><input class="bill-edit-dia" type="number" value="${b.diaVenc||''}" min="1" max="31" placeholder="—"/></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn-primary" style="flex:1;font-size:13px;padding:9px" onclick="saveEditBill(${b.id})">Salvar</button><button class="btn-ghost" style="font-size:13px;padding:9px" onclick="cancelEditBill(${b.id})">Cancelar</button></div></div>`;
+      return`<div class="bill-row" id="bill-row-${b.id}"><div class="bill-info"><div><div class="bill-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${esc(b.desc)}${tipoBadge}</div><div class="bill-val">${fmt(b.valPadrao)}${vencInfo}</div></div><div class="bill-actions">${badge}${payBtn}<button class="btn-sm" onclick="openEditBill(${b.id})">Editar</button><button class="btn-sm" onclick="removeFixedBill(${b.id})">Remover</button></div></div><div class="pay-form" id="pay-form-${b.id}"><input type="number" id="pay-val-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><button class="btn-sm green" onclick="confirmPayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-sm" onclick="togglePayForm(${b.id})">Cancelar</button></div>${editForm}</div>`;
     }).join('');
   }else{bHTML+=`<div style="text-align:center;padding:16px 0;color:var(--text3);font-size:13px">Nenhuma conta fixa cadastrada</div>`;}
   bHTML+=`<div id="add-bill-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)"><div class="tipo-toggle" id="bill-toggle"><button class="tipo-btn act-pf" onclick="setTipo('PF','bill')">Pessoal — PF</button><button class="tipo-btn" onclick="setTipo('PJ','bill')">Empresa — PJ</button></div><div class="field"><label>Descrição</label><input type="text" id="new-bill-desc" placeholder="Ex: Aluguel"/></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><div class="field"><label>Valor padrão (R$)</label><input type="number" id="new-bill-val" placeholder="0,00" min="0" step="0.01"/></div><div class="field"><label>Vence todo dia</label><input type="number" id="new-bill-dia" placeholder="Ex: 10" min="1" max="31"/></div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn-primary" style="flex:1" onclick="confirmAddFixedBill()">Salvar</button><button class="btn-ghost" onclick="toggleBillAddForm()">Cancelar</button></div></div>`;
