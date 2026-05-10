@@ -174,6 +174,23 @@ body{font-family:var(--f);background:var(--bg);color:var(--text);min-height:100v
 .hero-sub-n{font-size:11px;color:rgba(255,255,255,.3);margin-top:2px}
 [data-theme="dark"] .hero-sub-n{color:var(--text3)}
 
+/* ── BILLS HERO CARD ── */
+.bills-hero{background:#1a1a1a;border-radius:var(--r);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+[data-theme="dark"] .bills-hero{background:var(--surface);border:1px solid var(--border)}
+.bills-hero::after{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(55,138,221,.15) 0%,transparent 70%);pointer-events:none}
+.bh-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+[data-theme="dark"] .bh-label{color:var(--text3)}
+.bh-val{font-size:30px;font-weight:700;color:#fff;letter-spacing:-1.2px;margin-bottom:14px}
+[data-theme="dark"] .bh-val{color:var(--text)}
+.bh-sub{background:rgba(255,255,255,.07);border-radius:var(--r-sm);padding:10px 13px}
+[data-theme="dark"] .bh-sub{background:var(--surface2)}
+.bh-sub-label{font-size:10px;color:rgba(255,255,255,.35);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+[data-theme="dark"] .bh-sub-label{color:var(--text3)}
+.bh-sub-val{font-size:16px;font-weight:700}
+.bh-sub-n{font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;font-weight:600;margin-top:2px}
+[data-theme="dark"] .bh-sub-n{color:var(--text3)}
+.bh-count{font-size:20px;font-weight:700}
+
 /* ── PROMO BANNER ── */
 .promo-bar{background:linear-gradient(90deg,#0f2d5e 0%,#1a4a8a 100%);color:#fff;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:500}
 .promo-bar-text{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
@@ -845,7 +862,7 @@ let STATE = {
   fixedBillsPaid: [],
   budgets: {},
   filterVal: 'todos',
-  tipoG:'PF', tipoM:'PF', tipoEdit:'PF',
+  tipoG:'PF', tipoM:'PF', tipoEdit:'PF', tipoBill:'PF',
   evoChart: null,
   recognition: null,
   syncing: false,
@@ -933,12 +950,13 @@ const DB = {
   async loadFixedBills(){
     const{data,error}=await db.from('fixed_bills').select('*').eq('user_id',STATE.user.id).order('created_at',{ascending:true});
     if(error)throw new Error(error.message);
-    STATE.fixedBills=(data||[]).map(r=>({id:r.id,desc:r.descricao,valPadrao:parseFloat(r.val_padrao)}));
+    STATE.fixedBills=(data||[]).map(r=>({id:r.id,desc:r.descricao,valPadrao:parseFloat(r.val_padrao),diaVenc:r.dia_vencimento||null,tipo:r.tipo||'PF'}));
+    STATE.fixedBills.sort((a,b)=>{if(a.diaVenc&&b.diaVenc)return a.diaVenc-b.diaVenc;if(a.diaVenc)return -1;if(b.diaVenc)return 1;return 0;});
   },
   async addFixedBill(bill){
     this.setSyncing(true);
     try{
-      const result=await db.from('fixed_bills').insert({descricao:bill.desc,val_padrao:bill.valPadrao,user_id:STATE.user.id}).select();
+      const result=await db.from('fixed_bills').insert({descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF',user_id:STATE.user.id}).select();
       if(result.error)throw result.error;
       return result.data?.[0];
     }finally{this.setSyncing(false);}
@@ -1221,7 +1239,7 @@ function byMonth(k){return STATE.items.filter(i=>mk(i.date)===k);}
 // ═══════════════════════════════════════════
 // TIPO / PARCELAS
 // ═══════════════════════════════════════════
-function setTipo(t,scope){if(scope==='g')STATE.tipoG=t;else if(scope==='m')STATE.tipoM=t;else STATE.tipoEdit=t;const el=document.getElementById(scope+'-toggle');el.children[0].className='tipo-btn'+(t==='PF'?' act-pf':'');el.children[1].className='tipo-btn'+(t==='PJ'?' act-pj':'');}
+function setTipo(t,scope){if(scope==='g')STATE.tipoG=t;else if(scope==='m')STATE.tipoM=t;else if(scope==='bill')STATE.tipoBill=t;else STATE.tipoEdit=t;const el=document.getElementById(scope+'-toggle');el.children[0].className='tipo-btn'+(t==='PF'?' act-pf':'');el.children[1].className='tipo-btn'+(t==='PJ'?' act-pj':'');}
 function toggleParcela(scope){const chk=document.getElementById(scope+'-parc-chk').checked;document.getElementById(scope+'-parc-row').classList.toggle('show',chk);updateParcelaPreview(scope);}
 function updateParcelaPreview(scope){const chk=document.getElementById(scope+'-parc-chk');if(!chk||!chk.checked)return;const val=parseFloat(document.getElementById(scope+'-val').value)||0;const n=parseInt(document.getElementById(scope+'-parc-n').value,10)||2;const pv=document.getElementById(scope+'-parc-preview');if(pv)pv.textContent=n+'x de '+fmt(val/n);}
 
@@ -1334,7 +1352,7 @@ async function confirmHomePayBill(billId,monthKey){
     const row=await DB.payFixedBill(billId,monthKey,val);
     STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
     const dateStr=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');
-    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:'PF',date:dateStr,rec:false};
+    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:bill.tipo||'PF',date:dateStr,rec:false};
     STATE.items.unshift(item);
     await DB.addItem(item);
     saveLocalCache(STATE.user.id);
@@ -1354,7 +1372,7 @@ async function confirmPayBill(billId,monthKey){
     const row=await DB.payFixedBill(billId,monthKey,val);
     STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
     const dateStr=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');
-    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:'PF',date:dateStr,rec:false};
+    const item={id:Date.now(),desc:bill.desc,val,cat:detectCat(bill.desc),tipo:bill.tipo||'PF',date:dateStr,rec:false};
     STATE.items.unshift(item);
     await DB.addItem(item);
     saveLocalCache(STATE.user.id);
@@ -1363,16 +1381,21 @@ async function confirmPayBill(billId,monthKey){
   }catch(e){console.error(e);toast('Erro ao registrar pagamento');}
 }
 
-function toggleBillAddForm(){const f=document.getElementById('add-bill-form');if(f){f.style.display=f.style.display==='block'?'none':'block';}}
+function toggleBillAddForm(){const f=document.getElementById('add-bill-form');if(f){const isOpen=f.style.display==='block';f.style.display=isOpen?'none':'block';if(!isOpen){STATE.tipoBill='PF';const tog=document.getElementById('bill-toggle');if(tog){tog.children[0].className='tipo-btn act-pf';tog.children[1].className='tipo-btn';}}}}
 
 async function confirmAddFixedBill(){
   const desc=document.getElementById('new-bill-desc')?.value.trim();
   const val=parseFloat(document.getElementById('new-bill-val')?.value);
+  const diaRaw=document.getElementById('new-bill-dia')?.value;
+  const diaVenc=diaRaw?parseInt(diaRaw,10):null;
+  const tipo=STATE.tipoBill||'PF';
   if(!desc){toast('Informe a descrição');return;}
   if(!val||val<=0){toast('Informe o valor');return;}
+  if(diaVenc&&(diaVenc<1||diaVenc>31)){toast('Dia de vencimento inválido (1–31)');return;}
   try{
-    const row=await DB.addFixedBill({desc,valPadrao:val});
-    STATE.fixedBills.push({id:row?.id||Date.now(),desc,valPadrao:val});
+    const row=await DB.addFixedBill({desc,valPadrao:val,diaVenc,tipo});
+    STATE.fixedBills.push({id:row?.id||Date.now(),desc,valPadrao:val,diaVenc,tipo});
+    STATE.fixedBills.sort((a,b)=>{if(a.diaVenc&&b.diaVenc)return a.diaVenc-b.diaVenc;if(a.diaVenc)return -1;if(b.diaVenc)return 1;return 0;});
     saveLocalCache(STATE.user.id);
     toast('Conta fixa adicionada');renderMetas();
   }catch(e){console.error(e);toast('Erro ao salvar');}
@@ -1716,12 +1739,12 @@ function renderHome(){
   alertsEl.innerHTML=alerts.map(a=>`<div class="alert-banner ${a.cls}" data-rec="${a.isRec||false}" data-month="${a.monthKey||''}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${a.msg}</div>`).join('');
   alertsEl.querySelectorAll('[data-rec="true"]').forEach(el=>{const m=el.getAttribute('data-month');el.onclick=()=>openRecModal(m);});
 
-  // carrossel de contas fixas pendentes
+  // carrossel de contas fixas pendentes (já ordenadas por diaVenc)
   const pendingBills=STATE.fixedBills.filter(b=>!STATE.fixedBillsPaid.some(p=>p.billId===b.id&&p.monthKey===monthKey));
   const carouselEl=document.getElementById('h-bills-carousel');
   if(carouselEl){
     if(pendingBills.length){
-      carouselEl.innerHTML=`<div class="bills-carousel">${pendingBills.map(b=>`<div class="bill-card" id="hbc-${b.id}"><div class="bill-card-name">${esc(b.desc)}</div><div class="bill-card-val">${fmt(b.valPadrao)}</div><button style="width:100%;background:#0f2d5e;color:#fff;border:none;border-radius:var(--r-xs);padding:7px;font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer" onclick="toggleHomePayForm(${b.id})">Paguei!</button><div class="bill-card-pay" id="hpf-${b.id}"><input type="number" id="hpv-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><div style="display:flex;gap:6px"><button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="confirmHomePayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-ghost" style="font-size:12px;padding:6px" onclick="toggleHomePayForm(${b.id})">✕</button></div></div></div>`).join('')}</div>`;
+      carouselEl.innerHTML=`<div class="bills-carousel">${pendingBills.map(b=>{const vencLine=b.diaVenc?`<div style="font-size:10px;color:var(--text3);margin-bottom:6px">Vence dia ${b.diaVenc}</div>`:'';const tipoBadge=`<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;${b.tipo==='PJ'?'background:var(--blue-l);color:var(--blue)':'background:var(--green-l);color:var(--green)'}">${b.tipo}</span>`;return`<div class="bill-card" id="hbc-${b.id}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px"><div class="bill-card-name" style="margin-bottom:0">${esc(b.desc)}</div>${tipoBadge}</div>${vencLine}<div class="bill-card-val">${fmt(b.valPadrao)}</div><button style="width:100%;background:#0f2d5e;color:#fff;border:none;border-radius:var(--r-xs);padding:7px;font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer" onclick="toggleHomePayForm(${b.id})">Paguei!</button><div class="bill-card-pay" id="hpf-${b.id}"><input type="number" id="hpv-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><div style="display:flex;gap:6px"><button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="confirmHomePayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-ghost" style="font-size:12px;padding:6px" onclick="toggleHomePayForm(${b.id})">✕</button></div></div></div>`;}).join('')}</div>`;
     }else{carouselEl.innerHTML='';}
   }
 
@@ -1760,14 +1783,22 @@ function renderMetas(){
   const monthLabel=mkLabel(monthKey);
   let bHTML=`<div class="sec-hdr"><span class="sec-title">Contas fixas — ${monthLabel}</span></div>`;
   if(STATE.fixedBills.length){
+    const totalBills=STATE.fixedBills.reduce((s,b)=>s+b.valPadrao,0);
+    const totalBillsPF=STATE.fixedBills.filter(b=>b.tipo==='PF').reduce((s,b)=>s+b.valPadrao,0);
+    const totalBillsPJ=STATE.fixedBills.filter(b=>b.tipo==='PJ').reduce((s,b)=>s+b.valPadrao,0);
+    const paidCount=STATE.fixedBills.filter(b=>STATE.fixedBillsPaid.some(p=>p.billId===b.id&&p.monthKey===monthKey)).length;
+    const pendingCount=STATE.fixedBills.length-paidCount;
+    bHTML+=`<div class="bills-hero"><div class="bh-label">Total de contas fixas</div><div class="bh-val">${fmt(totalBills)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div class="bh-sub"><div class="bh-sub-label">Pessoal — PF</div><div class="bh-sub-val" style="color:#378ADD">${fmt(totalBillsPF)}</div></div><div class="bh-sub"><div class="bh-sub-label">Empresa — PJ</div><div class="bh-sub-val" style="color:#60a5fa">${fmt(totalBillsPJ)}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="bh-sub" style="text-align:center"><div class="bh-count" style="color:#4ade80">${paidCount}</div><div class="bh-sub-n">Pagas</div></div><div class="bh-sub" style="text-align:center"><div class="bh-count" style="color:#fbbf24">${pendingCount}</div><div class="bh-sub-n">Pendentes</div></div><div class="bh-sub" style="text-align:center"><div class="bh-count" style="color:#fff">${STATE.fixedBills.length}</div><div class="bh-sub-n">Total</div></div></div></div>`;
     bHTML+=STATE.fixedBills.map(b=>{
       const paid=STATE.fixedBillsPaid.find(p=>p.billId===b.id&&p.monthKey===monthKey);
       const badge=paid?`<span class="bill-badge">Pago ✓ ${fmt(paid.valPago)}</span>`:'';
       const payBtn=paid?'':`<button class="btn-sm green" onclick="togglePayForm(${b.id})">Pagar</button>`;
-      return`<div class="bill-row" id="bill-row-${b.id}"><div class="bill-info"><div><div class="bill-name">${esc(b.desc)}</div><div class="bill-val">${fmt(b.valPadrao)}</div></div><div class="bill-actions">${badge}${payBtn}<button class="btn-sm" onclick="removeFixedBill(${b.id})">Remover</button></div></div><div class="pay-form" id="pay-form-${b.id}"><input type="number" id="pay-val-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><button class="btn-sm green" onclick="confirmPayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-sm" onclick="togglePayForm(${b.id})">Cancelar</button></div></div>`;
+      const tipoBadge=`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;${b.tipo==='PJ'?'background:var(--blue-l);color:var(--blue);border:1px solid rgba(37,99,235,.3)':'background:var(--green-l);color:var(--green);border:1px solid var(--green-mu)'}">${b.tipo}</span>`;
+      const vencInfo=b.diaVenc?`<span style="font-size:11px;color:var(--text3)"> · Vence dia ${b.diaVenc}</span>`:'';
+      return`<div class="bill-row" id="bill-row-${b.id}"><div class="bill-info"><div><div class="bill-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${esc(b.desc)}${tipoBadge}</div><div class="bill-val">${fmt(b.valPadrao)}${vencInfo}</div></div><div class="bill-actions">${badge}${payBtn}<button class="btn-sm" onclick="removeFixedBill(${b.id})">Remover</button></div></div><div class="pay-form" id="pay-form-${b.id}"><input type="number" id="pay-val-${b.id}" value="${b.valPadrao}" min="0" step="0.01"/><button class="btn-sm green" onclick="confirmPayBill(${b.id},'${monthKey}')">Confirmar</button><button class="btn-sm" onclick="togglePayForm(${b.id})">Cancelar</button></div></div>`;
     }).join('');
   }else{bHTML+=`<div style="text-align:center;padding:16px 0;color:var(--text3);font-size:13px">Nenhuma conta fixa cadastrada</div>`;}
-  bHTML+=`<div id="add-bill-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)"><div class="field"><label>Descrição</label><input type="text" id="new-bill-desc" placeholder="Ex: Aluguel"/></div><div class="field" style="margin-top:10px"><label>Valor padrão (R$)</label><input type="number" id="new-bill-val" placeholder="0,00" min="0" step="0.01"/></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn-primary" style="flex:1" onclick="confirmAddFixedBill()">Salvar</button><button class="btn-ghost" onclick="toggleBillAddForm()">Cancelar</button></div></div>`;
+  bHTML+=`<div id="add-bill-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;box-shadow:var(--shadow)"><div class="tipo-toggle" id="bill-toggle"><button class="tipo-btn act-pf" onclick="setTipo('PF','bill')">Pessoal — PF</button><button class="tipo-btn" onclick="setTipo('PJ','bill')">Empresa — PJ</button></div><div class="field"><label>Descrição</label><input type="text" id="new-bill-desc" placeholder="Ex: Aluguel"/></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><div class="field"><label>Valor padrão (R$)</label><input type="number" id="new-bill-val" placeholder="0,00" min="0" step="0.01"/></div><div class="field"><label>Vence todo dia</label><input type="number" id="new-bill-dia" placeholder="Ex: 10" min="1" max="31"/></div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn-primary" style="flex:1" onclick="confirmAddFixedBill()">Salvar</button><button class="btn-ghost" onclick="toggleBillAddForm()">Cancelar</button></div></div>`;
   bHTML+=`<button class="btn-ghost" style="width:100%;margin-bottom:20px" onclick="toggleBillAddForm()">+ Adicionar conta fixa</button>`;
   billsEl.innerHTML=bHTML;
 
