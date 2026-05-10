@@ -1236,9 +1236,10 @@ async function doAdd(desc,val,cat,tipo,date,rec){
     vibrate();
     const item={id:Date.now(),desc,val,cat,tipo,date,rec:!!rec};
     STATE.items.unshift(item);
+    saveLocalCache(STATE.user.id);
     renderAll();
-    try{await DB.addItem(item);saveLocalCache(STATE.user.id);}
-    catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);renderAll();}
+    try{await DB.addItem(item);}
+    catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);saveLocalCache(STATE.user.id);renderAll();}
     return true;
   }finally{STATE._saving=false;}
 }
@@ -1256,8 +1257,10 @@ async function doAddParcelas(desc,val,cat,tipo,date,n){
       const d=new Date(baseDate);d.setMonth(d.getMonth()+i);
       newItems.push({id:Date.now()+i*1000+Math.floor(Math.random()*1000),desc:`${desc} (${i+1}/${n})`,val:i===n-1?lastParcela:perParcela,cat,tipo,date:d.toISOString().substring(0,10),rec:false});
     }
-    STATE.items.unshift(...newItems);renderAll();
-    try{for(const item of newItems)await DB.addItem(item);saveLocalCache(STATE.user.id);toast(`${n} parcelas adicionadas`);}
+    STATE.items.unshift(...newItems);
+    saveLocalCache(STATE.user.id);
+    renderAll();
+    try{for(const item of newItems)await DB.addItem(item);toast(`${n} parcelas adicionadas`);}
     catch(e){toast('Erro ao salvar parcelas');}
   }finally{STATE._saving=false;}
 }
@@ -1915,6 +1918,16 @@ async function initApp(user){
 
     try{await DB.loadItems();}
     catch(e){console.error('[INIT] loadItems falhou:',e);if(!_cached)STATE.items=[];}
+
+    // Re-sincroniza itens que estavam no cache local mas ainda não chegaram ao Supabase
+    if(_cached&&Array.isArray(_cached.items)&&_cached.items.length>0){
+      const supaIds=new Set(STATE.items.map(i=>i.id));
+      const pending=_cached.items.filter(i=>!supaIds.has(i.id));
+      if(pending.length>0){
+        STATE.items=[...pending,...STATE.items];
+        for(const item of pending){try{await DB.addItem(item);}catch(e){console.error('[INIT] re-sync item falhou:',e);}}
+      }
+    }
 
     try{await DB.loadIncomes();}
     catch(e){console.error('[INIT] loadIncomes falhou:',e);if(!_cached)STATE.incomes=[];}
