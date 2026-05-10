@@ -1269,7 +1269,7 @@ async function doAdd(desc,val,cat,tipo,date,rec){
     saveLocalCache(STATE.user.id);
     renderAll();
     try{await DB.addItem(item);}
-    catch(e){console.error(e);toast('Erro ao salvar — verifique a conexão');STATE.items=STATE.items.filter(i=>i.id!==item.id);saveLocalCache(STATE.user.id);renderAll();}
+    catch(e){console.error(e);toast('Sem conexão — gasto salvo localmente e será sincronizado em breve');}
     return true;
   }finally{STATE._saving=false;}
 }
