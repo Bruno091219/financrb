@@ -45,31 +45,31 @@ body{font-family:var(--f);background:#FFFFFF;color:var(--text);min-height:100vh;
 @keyframes fadeIn{to{opacity:1}}
 
 /* ── AUTH ── */
-.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
-.auth-card{background:var(--surface);border-radius:24px;padding:36px 28px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
-.auth-logo{font-size:24px;font-weight:700;letter-spacing:-.8px;text-align:center;margin-bottom:8px}
-.auth-tagline{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.5}
-.auth-tabs{display:flex;background:var(--surface2);border-radius:var(--r-sm);padding:3px;margin-bottom:22px;gap:3px}
-.auth-tab{flex:1;padding:9px;font-family:var(--f);font-size:13px;font-weight:600;background:none;border:none;border-radius:9px;cursor:pointer;color:var(--text2);transition:all .2s var(--ease)}
-.auth-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.auth-field{margin-bottom:14px}
-.auth-field label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
-.auth-field input{width:100%;background:var(--surface2);border:none;color:var(--text);border-radius:12px;padding:14px 16px;font-family:var(--f);font-size:16px;font-weight:500;outline:none;transition:background .2s var(--ease);box-shadow:inset 0 0 0 1.5px transparent}
+[data-screen="auth"] .bnav,[data-screen="auth"] .fab{display:none!important}
+.auth-wrap{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#FFFFFF}
+.auth-card{width:100%;max-width:400px}
+.auth-logo-img{display:block;margin-left:auto;margin-right:auto}
+.auth-tabs{display:flex;background:#F2F2F7;border-radius:14px;padding:4px;margin-bottom:20px;gap:4px}
+.auth-tab{flex:1;padding:10px;font-family:var(--f);font-size:14px;font-weight:600;background:none;border:none;border-radius:10px;cursor:pointer;color:#8E8E93;transition:all .2s var(--ease)}
+.auth-tab.active{background:#0f2d5e;color:#fff}
+.auth-field{margin-bottom:20px}
+.auth-field label{display:block;font-size:13px;font-weight:500;color:#8E8E93;margin-bottom:6px}
+.auth-field input{width:100%;background:#F2F2F7;border:none;color:var(--text);border-radius:14px;padding:16px;font-family:var(--f);font-size:16px;font-weight:500;outline:none;transition:box-shadow .2s var(--ease);box-shadow:inset 0 0 0 1.5px transparent}
 .auth-field input:focus{box-shadow:inset 0 0 0 1.5px var(--green)}
 .auth-field input::placeholder{color:var(--text3);font-weight:400}
-.auth-btn{width:100%;padding:15px;font-family:var(--f);font-size:16px;font-weight:600;background:var(--green);color:#fff;border:none;border-radius:14px;cursor:pointer;transition:all .2s var(--ease);margin-top:4px}
+.auth-btn{width:100%;height:54px;font-family:var(--f);font-size:16px;font-weight:600;background:#0f2d5e;color:#fff;border:none;border-radius:14px;cursor:pointer;transition:all .2s var(--ease);margin-top:4px;box-shadow:0 4px 16px rgba(15,45,94,.3)}
 .auth-btn:hover{opacity:.9}
 .auth-btn:active{transform:scale(.97)}
 .auth-btn:disabled{opacity:.5;cursor:not-allowed}
-.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .auth-divider span{font-size:12px;color:var(--text3);font-weight:500}
-.auth-google{width:100%;padding:14px;font-family:var(--f);font-size:15px;font-weight:600;background:var(--surface2);color:var(--text);border:none;border-radius:14px;cursor:pointer;transition:all .2s var(--ease);display:flex;align-items:center;justify-content:center;gap:10px}
-.auth-google:hover{background:var(--surface3)}
+.auth-google{width:100%;height:54px;font-family:var(--f);font-size:15px;font-weight:600;background:#FFFFFF;color:var(--text);border:1.5px solid #E5E5EA;border-radius:14px;cursor:pointer;transition:all .2s var(--ease);display:flex;align-items:center;justify-content:center;gap:10px}
+.auth-google:hover{background:var(--surface2)}
 .auth-google:active{transform:scale(.97)}
 .auth-error{background:var(--red-l);color:var(--red);border-radius:12px;padding:10px 13px;font-size:13px;font-weight:500;margin-bottom:14px;display:none}
 .auth-error.show{display:block}
-.auth-footer{font-size:12px;color:var(--text3);text-align:center;margin-top:20px;line-height:1.7}
+.auth-footer{position:absolute;left:24px;right:24px;bottom:28px;font-size:12px;color:#C7C7CC;text-align:center;line-height:1.7}
 
 /* ── PLAN BADGE ── */
 .plan-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px}
@@ -494,8 +494,7 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 <div id="auth-screen" style="display:none">
   <div class="auth-wrap">
     <div class="auth-card">
-      <div class="auth-logo" style="display:flex;align-items:center;gap:10px;justify-content:center"><svg width="32" height="29" viewBox="0 0 100 90" fill="none" style="color:var(--logo-rb);flex-shrink:0"><line x1="50" y1="5" x2="20" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="80" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="5" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="50" y1="5" x2="95" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="95" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="80" y1="30" x2="50" y2="85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/><line x1="50" y1="5" x2="50" y2="30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg><div style="display:flex;flex-direction:column"><span style="font-family:Georgia,serif;font-size:18px;font-weight:400;letter-spacing:4px;color:var(--logo-rb);line-height:1">LAPID</span><span style="font-size:7px;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:var(--logo-financ);margin-top:2px">Financ</span></div></div>
-      <div class="auth-tagline">Controle financeiro pessoal e empresarial.<br/>Simples, rápido e seguro.</div>
+      <img src="/logo-vertical.png" class="auth-logo-img" style="width:160px;margin-bottom:8px"/>
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="showAuthTab('login')">Entrar</button>
         <button class="auth-tab" onclick="showAuthTab('register')">Criar conta</button>
@@ -505,7 +504,7 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
         <div class="auth-field"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"/></div>
         <div class="auth-field"><label>Senha</label><input type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password"/></div>
         <button class="auth-btn" onclick="doLogin()" id="login-btn">Entrar</button>
-        <div style="text-align:right;margin-top:10px"><span style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600" onclick="doResetPassword()">Esqueci a senha</span></div>
+        <div style="text-align:right;margin-top:12px"><span style="font-size:14px;color:#0f2d5e;cursor:pointer;font-weight:500" onclick="doResetPassword()">Esqueci a senha</span></div>
       </div>
       <div id="auth-register" style="display:none">
         <div class="auth-field"><label>Nome</label><input type="text" id="reg-name" placeholder="Seu nome"/></div>
@@ -1177,6 +1176,7 @@ async function doLogout(){
   document.getElementById('home-content').style.display='none';
   document.getElementById('app-screen').style.display='none';
   document.getElementById('auth-screen').style.display='';
+  document.documentElement.setAttribute('data-screen','auth');
   toast('Sessão encerrada');
 }
 
@@ -1934,6 +1934,7 @@ async function initApp(user){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
   document.getElementById('onboarding-overlay').style.display='none';
+  document.documentElement.setAttribute('data-screen','app');
   hideSplash();
 
   // _hideLoading e timeout definidos ANTES de qualquer chamada async
@@ -2028,7 +2029,7 @@ async function boot(){
   const params=new URLSearchParams(location.search);
   if(params.get('reset')==='true'){window.history.replaceState({},'',location.pathname);}
 
-  const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';hideSplash();};
+  const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';document.documentElement.setAttribute('data-screen','auth');hideSplash();};
 
   // _booted impede que o fallback do getSession chame initApp se onAuthStateChange já o fez
   let _booted=false;
