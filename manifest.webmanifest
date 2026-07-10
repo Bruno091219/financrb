@@ -5,7 +5,7 @@
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f6f2",
+  "background_color": "#ffffff",
   "theme_color": "#0f2d5e",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
@@ -17,13 +17,19 @@
       "purpose": "any"
     },
     {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-maskable.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -34,6 +40,12 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/logo-vertical.png",
+      "sizes": "1680x1800",
+      "type": "image/png"
+    }
+  ],
   "categories": ["finance", "productivity"]
 }
