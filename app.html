@@ -39,6 +39,11 @@ const CONFIG = {
 body{font-family:var(--f);background:#FFFFFF;color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
 [data-theme="dark"] body{background:#000000}
 
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease}
+#splash.hide{opacity:0;pointer-events:none}
+@keyframes fadeIn{to{opacity:1}}
+
 /* ── AUTH ── */
 .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
 .auth-card{background:var(--surface);border-radius:24px;padding:36px 28px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
@@ -479,6 +484,11 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 </style>
 </head>
 <body>
+
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <img src="/logo-vertical.png" style="width:200px;opacity:0;animation:fadeIn 0.5s ease 0.2s forwards"/>
+</div>
 
 <!-- ══ AUTH SCREEN ══ -->
 <div id="auth-screen" style="display:none">
@@ -1527,6 +1537,7 @@ function bgClose(e,id){if(e.target===document.getElementById(id))closeModal(id);
 let toastT;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2200);}
 function vibrate(){try{if(navigator.vibrate)navigator.vibrate(30);}catch(e){}}
+function hideSplash(){const s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(()=>s.remove(),450);}
 
 // ═══════════════════════════════════════════
 // ITEM HTML
@@ -1916,6 +1927,7 @@ async function initApp(user){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='';
   document.getElementById('onboarding-overlay').style.display='none';
+  hideSplash();
 
   // _hideLoading e timeout definidos ANTES de qualquer chamada async
   const _hideLoading=()=>{document.getElementById('home-loading').style.display='none';document.getElementById('home-content').style.display='';updateBnavIndicator();};
@@ -2009,7 +2021,7 @@ async function boot(){
   const params=new URLSearchParams(location.search);
   if(params.get('reset')==='true'){window.history.replaceState({},'',location.pathname);}
 
-  const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';};
+  const _showAuth=()=>{document.getElementById('auth-screen').style.display='';document.getElementById('app-screen').style.display='none';hideSplash();};
 
   // _booted impede que o fallback do getSession chame initApp se onAuthStateChange já o fez
   let _booted=false;
