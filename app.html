@@ -162,12 +162,7 @@ body{font-family:var(--f);background:#FFFFFF;color:var(--text);min-height:100vh;
 .hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.18) 0%,transparent 70%);pointer-events:none}
 .hero-label{font-size:10px;font-weight:600;color:#fff;opacity:.5;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;position:relative}
 .hero-val{font-size:42px;font-weight:800;color:#fff;letter-spacing:-2px;margin-bottom:2px;position:relative}
-.hero-proj{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:4px;font-weight:500;position:relative}
-.hero-proj b{font-weight:700;color:rgba(255,255,255,.75)}
-.hero-vs{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:18px;font-weight:500;position:relative}
-.hero-vs b{font-weight:700}
-.hero-vs.up b{color:#f87171}
-.hero-vs.down b{color:#4ade80}
+.hero-proj{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px;font-weight:500;position:relative}
 .hero-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
 .hero-sub{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:13px 14px}
 .hero-sub-label{font-size:10px;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
@@ -574,7 +569,6 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
         <div class="hero-label">Total do mês</div>
         <div class="hero-val" id="h-total">R$ 0,00</div>
         <div class="hero-proj" id="h-proj"></div>
-        <div class="hero-vs" id="h-vs"></div>
         <div class="hero-row">
           <div class="hero-sub"><div class="hero-sub-label">Pessoal — PF</div><div class="hero-sub-val pf" id="h-pf">R$ 0,00</div><div class="hero-sub-n" id="h-pf-n">0 gastos</div></div>
           <div class="hero-sub"><div class="hero-sub-label">Empresa — PJ</div><div class="hero-sub-val pj" id="h-pj">R$ 0,00</div><div class="hero-sub-n" id="h-pj-n">0 gastos</div></div>
@@ -1723,14 +1717,21 @@ function renderHome(){
   if(isInTrial()){const d=trialDaysLeft();const pct=Math.round(d/CONFIG.TRIAL_DAYS*100);const barColor=d<=3?'var(--red)':d<=7?'var(--amber)':'var(--green)';usageEl.innerHTML=`<div class="usage-bar"><div class="usage-row"><span class="usage-label">Trial gratuito</span><span class="usage-count">${d} dia${d!==1?'s':''} restante${d!==1?'s':''}</span></div><div class="usage-bg"><div class="usage-fill" style="width:${pct}%;background:${barColor}"></div></div></div>`;}
   else usageEl.innerHTML='';
 
-  // Projection
-  const proj=getProjection(monthKey);
+  // Comparativo vs mês anterior + % da renda utilizada
   const projEl=document.getElementById('h-proj');
-  if(proj&&isPro())projEl.innerHTML=`Projeção até o fim do mês: <b>${fmt(proj.projected)}</b>`;else projEl.innerHTML='';
-
-  // vs anterior
-  const vsEl=document.getElementById('h-vs');
-  if(prevTotal>0){const diff=total-prevTotal;const pct=Math.abs(Math.round(diff/prevTotal*100));const up=diff>0;vsEl.className='hero-vs '+(up?'up':'down');vsEl.innerHTML=`vs mês anterior: <b>${up?'+':'-'}${fmt(Math.abs(diff))} (${pct}%)</b>`;}else vsEl.innerHTML='';
+  const projParts=[];
+  if(prevTotal>0&&total!==prevTotal){
+    const pctChange=Math.round(Math.abs(total-prevTotal)/prevTotal*100);
+    const up=total>prevTotal;
+    projParts.push(`<span style="color:${up?'#f87171':'#4ade80'}">${up?'↑':'↓'} ${pctChange}% vs mês anterior</span>`);
+  }
+  const totalRendaMes=STATE.incomes.reduce((s,i)=>s+i.val,0);
+  if(totalRendaMes>0){
+    const pctRenda=Math.round(total/totalRendaMes*100);
+    const rendaColor=pctRenda>90?'#f87171':pctRenda>=70?'#fb923c':'#4ade80';
+    projParts.push(`<span style="color:${rendaColor}">${pctRenda}% da renda utilizada</span>`);
+  }
+  projEl.innerHTML=projParts.join(' <span style="opacity:.4">·</span> ');
 
   // bars
   const pfPct=total?Math.round(totPF/total*100):0;const pjPct=total?Math.round(totPJ/total*100):0;
