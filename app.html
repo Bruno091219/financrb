@@ -414,6 +414,10 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
 .modal-handle{width:36px;height:4px;background:var(--surface3);border-radius:2px;margin:0 auto 18px}
 .modal-bg.center .modal-handle{display:none}
+.modal-bg.modal-centered{align-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.modal-bg.modal-centered .modal{border-radius:24px;max-width:420px;max-height:85vh;margin:20px;animation:modalPopIn .25s cubic-bezier(0.32,0.72,0,1)}
+.modal-bg.modal-centered .modal-handle{display:none}
+@keyframes modalPopIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-title{font-size:17px;font-weight:600;margin-bottom:16px}
 .rec-confirm-item{background:var(--surface2);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
 .rec-confirm-check{width:20px;height:20px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
@@ -674,9 +678,8 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 </div>
 
 <!-- MODALS -->
-<div class="modal-bg" id="modal-add" onclick="bgClose(event,'modal-add')">
+<div class="modal-bg modal-centered" id="modal-add" onclick="bgClose(event,'modal-add')">
   <div class="modal">
-    <div class="modal-handle"></div>
     <div class="modal-title">Novo gasto rápido</div>
     <div class="ocr-row">
       <div class="field"><label>Descrição</label><input type="text" id="m-desc" placeholder="Ex: iFood, Netflix..."/></div>
@@ -846,6 +849,7 @@ let STATE = {
   evoChart: null,
   syncing: false,
   _isFirstTime: false,
+  _payingBills: new Set(),
 };
 
 function saveLocalCache(uid){
@@ -1250,7 +1254,7 @@ async function doAdd(desc,val,cat,tipo,date,rec){
     saveLocalCache(STATE.user.id);
     renderAll();
     try{await DB.addItem(item);}
-    catch(e){console.error(e);toast('Sem conexão — gasto salvo localmente e será sincronizado em breve');}
+    catch(e){console.error('[doAdd] falha ao salvar:',e);toast('Erro ao salvar gasto. Tente novamente.');}
     return true;
   }finally{STATE._saving=false;}
 }
@@ -1272,7 +1276,7 @@ async function doAddParcelas(desc,val,cat,tipo,date,n){
     saveLocalCache(STATE.user.id);
     renderAll();
     try{for(const item of newItems)await DB.addItem(item);toast(`${n} parcelas adicionadas`);}
-    catch(e){toast('Erro ao salvar parcelas');}
+    catch(e){console.error('[doAddParcelas] falha ao salvar:',e);toast('Erro ao salvar gasto. Tente novamente.');}
   }finally{STATE._saving=false;}
 }
 
@@ -1313,13 +1317,13 @@ async function saveEdit(){
   const updates={desc:document.getElementById('edit-desc').value.trim(),val:v,date:document.getElementById('edit-date').value,cat:document.getElementById('edit-cat').value,tipo:STATE.tipoEdit,rec:document.getElementById('edit-rec').checked};
   STATE.items[idx]={...STATE.items[idx],...updates};
   renderAll();closeModal('modal-edit');toast('Atualizado');
-  try{await DB.updateItem(id,updates);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao salvar');}
+  try{await DB.updateItem(id,updates);saveLocalCache(STATE.user.id);}catch(e){console.error('[saveEdit] falha ao salvar:',e);toast('Erro ao salvar gasto. Tente novamente.');}
 }
 async function delItem(id){
   if(!confirm('Remover este gasto?'))return;
   STATE.items=STATE.items.filter(i=>i.id!==id);
   renderAll();toast('Removido');
-  try{await DB.deleteItem(id);saveLocalCache(STATE.user.id);}catch(e){toast('Erro ao remover');}
+  try{await DB.deleteItem(id);saveLocalCache(STATE.user.id);}catch(e){console.error('[delItem] falha ao remover:',e);toast('Erro ao remover gasto. Tente novamente.');}
 }
 
 // ═══════════════════════════════════════════
@@ -1333,9 +1337,11 @@ function toggleBillMenu(billId){
 }
 
 async function confirmHomePayBill(billId,monthKey){
+  if(STATE._payingBills.has(billId))return;
   const val=parseFloat(document.getElementById('hpv-'+billId)?.value);
   if(!val||val<=0){toast('Informe o valor');return;}
   const bill=STATE.fixedBills.find(b=>b.id===billId);if(!bill)return;
+  STATE._payingBills.add(billId);
   try{
     const row=await DB.payFixedBill(billId,monthKey,val);
     STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
@@ -1349,13 +1355,16 @@ async function confirmHomePayBill(billId,monthKey){
     if(carousel&&!carousel.children.length)document.getElementById('h-bills-carousel').innerHTML='';
     toast('Conta paga e lançada!');
     renderHome();
-  }catch(e){console.error(e);toast('Erro ao registrar pagamento');}
+  }catch(e){console.error('[confirmHomePayBill] falha:',e);toast('Erro ao registrar pagamento. Tente novamente.');}
+  finally{STATE._payingBills.delete(billId);}
 }
 
 async function confirmPayBill(billId,monthKey){
+  if(STATE._payingBills.has(billId))return;
   const val=parseFloat(document.getElementById('pay-val-'+billId)?.value);
   if(!val||val<=0){toast('Informe o valor');return;}
   const bill=STATE.fixedBills.find(b=>b.id===billId);if(!bill)return;
+  STATE._payingBills.add(billId);
   try{
     const row=await DB.payFixedBill(billId,monthKey,val);
     STATE.fixedBillsPaid.push({id:row?.id||Date.now(),billId,monthKey,valPago:val});
@@ -1366,7 +1375,8 @@ async function confirmPayBill(billId,monthKey){
     saveLocalCache(STATE.user.id);
     toast('Conta paga e lançada nos gastos');
     renderMetas();renderHome();
-  }catch(e){console.error(e);toast('Erro ao registrar pagamento');}
+  }catch(e){console.error('[confirmPayBill] falha:',e);toast('Erro ao registrar pagamento. Tente novamente.');}
+  finally{STATE._payingBills.delete(billId);}
 }
 
 function toggleBillAddForm(){const f=document.getElementById('add-bill-form');if(f){const isOpen=f.style.display==='block';f.style.display=isOpen?'none':'block';if(!isOpen){STATE.tipoBill='PF';const tog=document.getElementById('bill-toggle');if(tog){tog.children[0].className='tipo-btn act-pf';tog.children[1].className='tipo-btn';}}}}
@@ -1580,8 +1590,10 @@ async function confirmRecurring(){
   const toConfirm=window._rcItems||[];const monthKey=window._rcMonth||today().substring(0,7);const date=monthKey+'-'+String(new Date().getDate()).padStart(2,'0');let count=0;
   const newItems=[];
   toConfirm.forEach((item,idx)=>{const cb=document.getElementById('rc-'+idx);if(cb&&cb.checked){const ni={id:Date.now()+idx*1000+Math.floor(Math.random()*1000),desc:item.desc,val:item.val,cat:item.cat,tipo:item.tipo,date,rec:false};newItems.push(ni);count++;}});
-  STATE.items.unshift(...newItems);renderAll();closeModal('modal-rec');toast(count+' gasto'+(count!==1?'s':'')+' adicionado'+(count!==1?'s':''));
-  for(const item of newItems){try{await DB.addItem(item);}catch(e){}}
+  STATE.items.unshift(...newItems);saveLocalCache(STATE.user.id);renderAll();closeModal('modal-rec');toast(count+' gasto'+(count!==1?'s':'')+' adicionado'+(count!==1?'s':''));
+  let failed=0;
+  for(const item of newItems){try{await DB.addItem(item);}catch(e){console.error('[confirmRecurring] falha ao salvar item:',e);failed++;}}
+  if(failed>0)toast('Erro ao salvar gasto. Tente novamente.');
 }
 
 // ═══════════════════════════════════════════
@@ -1976,7 +1988,9 @@ async function initApp(user){
       const pending=_cached.items.filter(i=>!supaIds.has(i.id));
       if(pending.length>0){
         STATE.items=[...pending,...STATE.items];
-        for(const item of pending){try{await DB.addItem(item);}catch(e){console.error('[INIT] re-sync item falhou:',e);}}
+        let resyncFailed=0;
+        for(const item of pending){try{await DB.addItem(item);}catch(e){console.error('[INIT] re-sync item falhou:',e);resyncFailed++;}}
+        if(resyncFailed>0)toast('Erro ao salvar gasto. Tente novamente.');
       }
     }
 
@@ -2066,7 +2080,7 @@ boot();
 // ═══════════════════════════════════════════
 // DRAG-TO-CLOSE (bottom sheets)
 // ═══════════════════════════════════════════
-document.querySelectorAll('.modal-bg:not(.center)').forEach(bg=>{
+document.querySelectorAll('.modal-bg:not(.center):not(.modal-centered)').forEach(bg=>{
   const modal=bg.querySelector('.modal');const handle=bg.querySelector('.modal-handle');
   if(!modal||!handle)return;
   let startY=0,dy=0,dragging=false;
