@@ -862,30 +862,9 @@ function loadLocalCache(uid){
 
 // ═══════════════════════════════════════════
 // DATABASE LAYER
+// Todas as tabelas (items, fixed_bills, fixed_bills_paid, budgets,
+// incomes, profiles) usam exclusivamente o SDK db.from() do supabase-js.
 // ═══════════════════════════════════════════
-function withTimeout(promise,ms=8000,fallback=null){
-  return Promise.race([
-    promise,
-    new Promise(resolve=>setTimeout(()=>resolve({data:fallback,error:{message:'timeout'}}),ms))
-  ]);
-}
-
-function getAuthHeaders(){
-  const token=STATE.token||CONFIG.SUPABASE_ANON_KEY;
-  return{'apikey':CONFIG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json'};
-}
-
-async function supaFetch(path,opts={}){
-  const url=CONFIG.SUPABASE_URL+'/rest/v1/'+path;
-  const headers=getAuthHeaders();
-  console.log('[supaFetch]',path.split('?')[0],'token:',STATE.token?'user-jwt':'ANON-FALLBACK');
-  const resp=await Promise.race([
-    fetch(url,{...opts,headers:{...headers,...(opts.headers||{})}}),
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),8000))
-  ]);
-  if(!resp.ok){let msg;try{const j=await resp.json();msg=j.message||j.error||resp.status;}catch{msg=resp.status;}throw new Error(String(msg));}
-  return resp.json();
-}
 
 const DB = {
   setSyncing(v){console.log('[SYNC] setSyncing chamado com:',v);STATE.syncing=v;const dot=document.getElementById('sync-dot');if(dot){dot.className='sync-dot '+(v?'syncing':'synced');}},
@@ -905,12 +884,13 @@ const DB = {
     this.setSyncing(true);
     const{desc,...rest}=item;
     const payload={...rest,descricao:desc,user_id:STATE.user.id};
-    console.log('[DB.addItem] enviando:',JSON.stringify(payload));
+    console.log('[SAVE] iniciando:','addItem',payload);
     try{
       const result=await db.from('items').insert(payload).select();
-      console.log('[DB.addItem] resposta:',JSON.stringify(result).slice(0,300));
+      console.log('[SAVE] resposta:',result);
       if(result.error)throw result.error;
-    }finally{this.setSyncing(false);}
+    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+    finally{this.setSyncing(false);}
   },
 
   async updateItem(id,data){
@@ -939,14 +919,15 @@ const DB = {
   },
   async addFixedBill(bill){
     this.setSyncing(true);
+    const payload={descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF',user_id:STATE.user.id};
+    console.log('[SAVE] iniciando:','addFixedBill',payload);
     try{
-      const payload={descricao:bill.desc,val_padrao:bill.valPadrao,dia_vencimento:bill.diaVenc||null,tipo:bill.tipo||'PF',user_id:STATE.user.id};
-      console.log('[DB.addFixedBill] payload:',JSON.stringify(payload));
       const result=await db.from('fixed_bills').insert(payload).select();
-      console.log('[DB.addFixedBill] resposta:',JSON.stringify(result).slice(0,300));
+      console.log('[SAVE] resposta:',result);
       if(result.error)throw result.error;
       return result.data?.[0];
-    }finally{this.setSyncing(false);}
+    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+    finally{this.setSyncing(false);}
   },
   async updateFixedBill(id,bill){
     this.setSyncing(true);
@@ -986,11 +967,15 @@ const DB = {
 
   async addIncome(income){
     this.setSyncing(true);
+    const payload={descricao:income.desc,val:income.val,user_id:STATE.user.id};
+    console.log('[SAVE] iniciando:','addIncome',payload);
     try{
-      const result=await db.from('incomes').insert({descricao:income.desc,val:income.val,user_id:STATE.user.id}).select();
+      const result=await db.from('incomes').insert(payload).select();
+      console.log('[SAVE] resposta:',result);
       if(result.error)throw result.error;
       return result.data?.[0];
-    }finally{this.setSyncing(false);}
+    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+    finally{this.setSyncing(false);}
   },
 
   async deleteIncome(id){
@@ -1012,10 +997,14 @@ const DB = {
 
   async setBudget(cat,amount){
     this.setSyncing(true);
+    const payload={user_id:STATE.user.id,cat,amount};
+    console.log('[SAVE] iniciando:','setBudget',payload);
     try{
-      const{error}=await db.from('budgets').upsert({user_id:STATE.user.id,cat,amount},{onConflict:'user_id,cat'});
-      if(error)throw error;
-    }finally{this.setSyncing(false);}
+      const result=await db.from('budgets').upsert(payload,{onConflict:'user_id,cat'});
+      console.log('[SAVE] resposta:',result);
+      if(result.error)throw result.error;
+    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+    finally{this.setSyncing(false);}
   },
 
   async deleteBudget(cat){
@@ -1257,8 +1246,11 @@ async function doAdd(desc,val,cat,tipo,date,rec){
     STATE.items.unshift(item);
     saveLocalCache(STATE.user.id);
     renderAll();
-    try{await DB.addItem(item);toast('✓ Gasto adicionado!','success');}
-    catch(e){console.error('[doAdd] falha ao salvar:',e);toast('Erro ao salvar gasto. Tente novamente.');}
+    try{
+      await DB.addItem(item);
+      toast('✓ Gasto adicionado!','success');
+      renderGastos();renderHome();
+    }catch(e){console.error('[doAdd] falha ao salvar:',e);toast('Erro ao salvar gasto. Tente novamente.');}
     return true;
   }finally{STATE._saving=false;}
 }
@@ -1617,7 +1609,7 @@ function getAnomalies(monthKey){
   return anomalies.sort((a,b)=>b.pct-a.pct).slice(0,3);
 }
 function getQuickItems(){const freq={};STATE.items.forEach(i=>{const k=i.desc+'|'+i.cat+'|'+i.tipo;if(!freq[k])freq[k]={count:0,item:i};freq[k].count++;});return Object.values(freq).sort((a,b)=>b.count-a.count).slice(0,4).map(x=>x.item);}
-async function quickAdd(desc,val,cat,tipo){const ok=await doAdd(desc,val,cat,tipo,today(),false);if(ok)toast('Lançado: '+desc);}
+async function quickAdd(desc,val,cat,tipo){await doAdd(desc,val,cat,tipo,today(),false);}
 
 // ═══════════════════════════════════════════
 // OCR
