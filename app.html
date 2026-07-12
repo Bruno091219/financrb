@@ -898,13 +898,35 @@ const DB = {
   },
 
   async deleteItem(id){
+    // Usa fetch direto em vez de db.from() — o query builder do supabase-js
+    // aguarda internamente por um lock de sessão (navigator.locks) que pode
+    // travar indefinidamente em contexto de PWA/service worker, deixando a
+    // requisição sem resposta. Aqui obtemos o token manualmente, com timeout.
     this.setSyncing(true);
     console.log('[SAVE] iniciando:','deleteItem',{id});
     try{
-      const result=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
-      console.log('[SAVE] resposta:',result);
-      if(result.error)throw result.error;
-    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+      let token=STATE.token;
+      try{
+        const{data}=await Promise.race([
+          db.auth.getSession(),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('getSession timeout')),5000))
+        ]);
+        token=data?.session?.access_token||token;
+      }catch(e){console.error('[SAVE] getSession travou/falhou, usando token em cache:',e);}
+      const resp=await fetch(
+        `${CONFIG.SUPABASE_URL}/rest/v1/items?id=eq.${id}&user_id=eq.${STATE.user.id}`,
+        {
+          method:'DELETE',
+          headers:{
+            'apikey':CONFIG.SUPABASE_ANON_KEY,
+            'Authorization':'Bearer '+token,
+            'Content-Type':'application/json'
+          }
+        }
+      );
+      console.log('[SAVE] resposta deleteItem:',resp.status,resp.ok);
+      if(!resp.ok)throw new Error('Delete falhou: '+resp.status);
+    }catch(error){console.error('[SAVE] erro deleteItem:',error);throw error;}
     finally{this.setSyncing(false);}
   },
 
