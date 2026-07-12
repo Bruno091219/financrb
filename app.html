@@ -899,10 +899,13 @@ const DB = {
 
   async deleteItem(id){
     this.setSyncing(true);
+    console.log('[SAVE] iniciando:','deleteItem',{id});
     try{
-      const{error}=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
-      if(error)throw error;
-    }finally{this.setSyncing(false);}
+      const result=await db.from('items').delete().eq('id',id).eq('user_id',STATE.user.id);
+      console.log('[SAVE] resposta:',result);
+      if(result.error)throw result.error;
+    }catch(error){console.error('[SAVE] erro:',error);throw error;}
+    finally{this.setSyncing(false);}
   },
 
   async loadFixedBills(){

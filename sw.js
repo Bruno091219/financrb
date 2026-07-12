@@ -1,4 +1,4 @@
-const CACHE = 'financrb-v2';
+const CACHE = 'lapid-v3';
 const SHELL = ['/app', '/app.html', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', e => {
