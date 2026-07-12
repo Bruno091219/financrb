@@ -845,6 +845,7 @@ let STATE = {
   syncing: false,
   _isFirstTime: false,
   _payingBills: new Set(),
+  realtimeChannel: null,
 };
 
 function saveLocalCache(uid){
@@ -1177,6 +1178,7 @@ async function doLogout(){
   const now=Date.now();
   if(now-_logoutAt>4000){_logoutAt=now;toast('Toque em "Sair" novamente para confirmar');return;}
   _logoutAt=0;
+  if(STATE.realtimeChannel){db.removeChannel(STATE.realtimeChannel);STATE.realtimeChannel=null;}
   try{
     await Promise.race([
       db.auth.signOut({scope:'local'}),
@@ -1960,6 +1962,41 @@ function renderConfig(){
 function renderAll(){buildSelects();renderHome();renderGastos();renderMetas();renderRenda();renderPlanos();renderConfig();renderPlanBadge();}
 
 // ═══════════════════════════════════════════
+// REALTIME
+// ═══════════════════════════════════════════
+function subscribeRealtime(){
+  if(STATE.realtimeChannel)return;
+  STATE.realtimeChannel=db.channel('items-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'items',filter:`user_id=eq.${STATE.user.id}`},(payload)=>{
+      console.log('[REALTIME] mudança detectada:',payload.eventType);
+      if(payload.eventType==='INSERT'){
+        const r=payload.new;
+        const exists=STATE.items.find(i=>i.id===r.id);
+        if(!exists){
+          STATE.items.unshift({id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec});
+          saveLocalCache(STATE.user.id);
+          renderAll();
+        }
+      }
+      if(payload.eventType==='DELETE'){
+        STATE.items=STATE.items.filter(i=>i.id!==payload.old.id);
+        saveLocalCache(STATE.user.id);
+        renderAll();
+      }
+      if(payload.eventType==='UPDATE'){
+        const idx=STATE.items.findIndex(i=>i.id===payload.new.id);
+        if(idx!==-1){
+          const r=payload.new;
+          STATE.items[idx]={id:r.id,desc:r.descricao,val:parseFloat(r.val),cat:r.cat,tipo:r.tipo,date:r.date,rec:r.rec};
+          saveLocalCache(STATE.user.id);
+          renderAll();
+        }
+      }
+    })
+    .subscribe((status)=>{console.log('[REALTIME] status:',status);});
+}
+
+// ═══════════════════════════════════════════
 // INIT APP (after auth)
 // ═══════════════════════════════════════════
 async function initApp(user){
@@ -2030,6 +2067,8 @@ async function initApp(user){
 
     // Salva no cache local após carregar do Supabase
     saveLocalCache(user.id);
+
+    subscribeRealtime();
 
     // Apply theme
     document.documentElement.setAttribute('data-theme',STATE.profile.dark?'dark':'light');
